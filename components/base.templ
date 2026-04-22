@@ -1,0 +1,75 @@
+package components
+
+import "github.com/forrest-bajbek/bombs/types"
+
+templ BasePage(title string) {
+<!DOCTYPE html>
+<html lang="en" class="theme-dark has-navbar-fixed-top">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.min.css">
+	<script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.10/dist/htmx.min.js" integrity="sha384-H5SrcfygHmAuTDZphMHqBJLc3FhssKjG7w/CeCpFReSfwBWDTKpkzPP8c+cLsK+V" crossorigin="anonymous"></script>
+  <title>{ title }</title>
+</head>
+
+<body>
+  { children... }
+</body>
+
+</html>
+}
+
+templ BaseNav(user *types.User) {
+<nav class="navbar is-fixed-top has-shadow" role="navigation">
+	<div class="navbar-brand">
+		<a class="navbar-item" href="/">B💣MBS</a>
+		<a role="button" class="navbar-burger" data-target="navbar-items">
+			<span></span>
+			<span></span>
+			<span></span>
+			<span></span>
+		</a>
+	</div>
+	<div class="navbar-menu" id="navbar-items">
+		<div class="navbar-start">
+			<a class="navbar-item" href="/user/profile">Profile</a>
+			<a class="navbar-item" href="/chat/create">Create Chat</a>
+			if user.IsAdmin{
+				<a class="navbar-item" href="/user/invite">Invite User</a>
+			}
+		</div>
+		<div class="navbar-end">
+			<a class="navbar-item" href="#" id="logout-form-submit">Logout</a>
+			<form id="logout-form" class="navbar-item" action="/logout" method="POST">
+			<script>
+				document.getElementById('logout-form-submit').onclick = function(event) {
+					if (confirm('Log Out?')) {
+						event.preventDefault(); // Prevents the link from following the '#' URL
+						document.getElementById('logout-form').submit();
+					}
+				};
+			</script>
+			</form>
+		</div>
+	</div>
+	<script>
+		document.addEventListener('DOMContentLoaded', () => {
+			// Get all "navbar-burger" elements
+			const $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
+			// Add a click event on each of them
+			$navbarBurgers.forEach(el => {
+				el.addEventListener('click', () => {
+					// Get the target from the "data-target" attribute
+					const target = el.dataset.target;
+					const $target = document.getElementById(target);
+					// Toggle the "is-active" class on both the "navbar-burger" and the "navbar-menu"
+					el.classList.toggle('is-active');
+					$target.classList.toggle('is-active');
+				});
+			});
+		});
+	</script>
+</nav>
+{ children... }
+}

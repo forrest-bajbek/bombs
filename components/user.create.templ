@@ -1,0 +1,88 @@
+package components
+
+import "github.com/forrest-bajbek/bombs/types"
+
+
+templ UserInvitePage(user *types.User) {
+	@BasePage("Invite User") {
+		@BaseNav(user) {
+			<div class="box content">
+				<a class="button" href="/">Back</a>
+				<h1>Generate an invite link</h1>
+				<div class="field">
+					<label class="label">Username</label>
+					<div class="control">
+						<input
+							hx-post="/user/invite"
+							hx-target="#invite-link-div"
+							hx-trigger="input changed delay:500ms, keyup[key=='Enter']"
+							class="input"
+							type="text"
+							name="username"
+							placeholder="New Username"
+							id="username"
+						>
+					</div>
+				</div>
+				<div id="invite-link-div">
+					<!-- HTMX Target -->
+				</div>
+			</div>
+		}
+	}
+}
+
+templ PartialUserInviteUserEmpty() {
+	<div id="invite-link-div">
+	</div>
+}
+
+templ PartialUserInviteUserAlreadyExists(username string) {
+	<div id="invite-link-div">
+		<div class="field">
+			<br/>
+			<label class="label">Error</label>
+			<div class="control">
+				<input class="input" type="text" value="Username already exists!" readonly="true"/>
+			</div>
+		</div>
+	</div>
+}
+
+templ PartialUserInviteLink(link string) {
+	<div id="invite-link-div">
+		<div class="field">
+			<br/>
+			<label class="label">Invite Link</label>
+			<div class="control">
+				<input class="input" type="text" value={ link } readonly="true"/>
+			</div>
+		</div>
+		<button class="button is-primary" onclick={ templ.JSFuncCall("copyInviteLink", link) }>Copy Link</button>
+		<script>
+			function copyInviteLink(link) {
+				navigator.clipboard.writeText(link).then(() => {
+					alert("Text copied to clipboard!");
+				}).catch(err => {
+					console.error("Failed to copy: ", err);
+				});
+			}
+		</script>
+	</div>
+}
+
+templ UserCreatePage(username string, inviteToken string) {
+@BasePage("Create User") {
+@LoginNav() {
+<div class="box content">
+	<h1>Create Account</h1>
+	<form action="/user/create" method="POST">
+		<input id="inviteToken" class="input" type="hidden" name="inviteToken" value={ inviteToken } readonly="true" />
+		<input id="username" class="input" type="text" name="username" value={ username } readonly="true" />
+		<input id="password" class="input" type="password" name="password" placeholder="password" />
+		<button class="button is-primary">Create User</button>
+	</form>
+</div>
+}
+}
+}

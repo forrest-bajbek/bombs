@@ -1,0 +1,164 @@
+package handlers
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"log"
+	"net/http"
+	"strconv"
+
+	"github.com/forrest-bajbek/bombs/components"
+	"github.com/forrest-bajbek/bombs/middlewares"
+	"github.com/forrest-bajbek/bombs/types"
+)
+
+func (h *Handler) ChatPage(w http.ResponseWriter, r *http.Request) {
+	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
+	if !ok {
+		http.Error(w, "Could not retrieve user from context", http.StatusBadRequest)
+		return
+	}
+
+	chat_id := r.PathValue("chat_id")
+	if chat_id == "" {
+		http.Error(w, "Cannot parse url", http.StatusInternalServerError)
+		return
+	}
+	chatID, err := strconv.Atoi(chat_id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	chat, err := h.service.GetChatByID(requestingUser.ID, chatID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	component := components.ChatPage(chat)
+	component.Render(context.Background(), w)
+}
+
+func (h *Handler) MessageCreate(w http.ResponseWriter, r *http.Request) {
+	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
+	if !ok {
+		http.Error(w, "Could not retrieve user from context", http.StatusBadRequest)
+		return
+	}
+	chat_id := r.PathValue("chat_id")
+	if chat_id == "" {
+		http.Error(w, "Cannot parse url", http.StatusInternalServerError)
+		return
+	}
+	chatID, err := strconv.Atoi(chat_id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	type MessageRequest struct {
+		Text string `json:"message"`
+	}
+	var m MessageRequest
+	err = json.NewDecoder(r.Body).Decode(&m)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	messageID, err := h.service.CreateMessage(requestingUser.ID, chatID, m.Text)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	newMessage, err := h.service.GetMessageByID(requestingUser.ID, chatID, messageID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	h.messageHub.Broadcast <- *newMessage
+}
+
+func (h *Handler) MessageEvents(w http.ResponseWriter, r *http.Request) {
+	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
+	if !ok {
+		http.Error(w, "Could not retrieve user from context", http.StatusBadRequest)
+	}
+	chat_id := r.PathValue("chat_id")
+	if chat_id == "" {
+		http.Error(w, "Cannot parse url", http.StatusInternalServerError)
+		return
+	}
+	chatID, err := strconv.Atoi(chat_id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	clientID, clientChannel, err := h.messageHub.CreateClientChannel(chatID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	// w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("Connection", "Keep-Alive")
+	w.Header().Set("X-Accel-Buffering", "no-cache")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	rc := http.NewResponseController(w)
+
+	// // send most recent messages from database
+	databaseMessages, err := h.service.GetMessagesByChatID(requestingUser.ID, chatID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	for _, m := range *databaseMessages {
+		jsonData, err := json.Marshal(&m)
+		if err != nil {
+			log.Printf("Error marshaling JSON: %v", err)
+			return
+		}
+		_, err = fmt.Fprintf(w, "event:%s\nid: %d\ndata: %s\n\n", "newMessage", m.ID, string(jsonData))
+		if err != nil {
+			log.Printf("Error sending event...")
+			return
+		}
+		err = rc.Flush()
+		if err != nil {
+			log.Printf("Error flushing: %v", err)
+			return
+		}
+	}
+
+	// retrieve context (used to check if client disconnects)
+	ctx := r.Context()
+
+	for {
+		select {
+		case m := <-clientChannel: // new message
+			log.Printf("Got a message: %s", m.Text)
+			jsonData, err := json.Marshal(&m)
+			if err != nil {
+				log.Printf("Error marshaling JSON: %v", err)
+				return
+			}
+			_, err = fmt.Fprintf(w, "event:%s\nid: %d\ndata: %s\n\n", "newMessage", m.ID, string(jsonData))
+			if err != nil {
+				log.Print("Error sending event...")
+				return
+			}
+			err = rc.Flush()
+			if err != nil {
+				log.Printf("Error flushing: %v", err)
+				return
+			}
+		case <-ctx.Done(): // client disconnected
+			h.messageHub.UnregisterClient <- clientID
+			return
+		}
+	}
+}

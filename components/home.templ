@@ -1,0 +1,61 @@
+package components
+
+import (
+    "github.com/forrest-bajbek/bombs/types"
+		"time"
+)
+
+templ HomePage(user *types.User, chatPreviews *[]types.ChatPreview) {
+	@BasePage("Chats") {
+		@BaseNav(user) {
+			@ChatPreviewList(chatPreviews)
+		}
+	}
+}
+
+templ ChatPreviewList(chatPreviews *[]types.ChatPreview) {
+	if len(*chatPreviews) == 0 {
+		<div class="box">
+			<p>No chats! <a href="/chat/create">Create One?</a></p>
+		</div>
+	} else {
+		for _, preview := range *chatPreviews {
+			@ChatPreview(&preview)
+		}
+	}
+}
+
+func kitchenTime(str string) string {
+	layout := "2006-01-02 15:04:05"
+	t, err := time.Parse(layout, str)
+	if err != nil {
+		panic(err)
+	}
+	return t.Format(time.Kitchen)
+}
+
+templ ChatPreview(preview *types.ChatPreview) {
+<a href={ preview.ChatURL() } class="box" style="margin: 10px 0;">
+	<article class="media">
+		<div class="media-left">
+			<figure class="image is-64x64">
+				<img src="https://bulma.io/assets/images/placeholders/128x128.png" alt="Image" />
+			</figure>
+		</div>
+		<div class="media-content">
+			<div class="content">
+				<p>
+					<strong>{ preview.ChatName }</strong>
+					<small></small>
+					<br />
+					if preview.LastMessageUsername == "" && preview.LastMessageText == "" {
+						{ "no messages" }
+					} else {
+						{ preview.LastMessageUsername }&#64;{ kitchenTime(preview.LastMessageCreatedAt) }: { preview.LastMessageText }
+					}
+				</p>
+			</div>
+		</div>
+	</article>
+</a>
+}

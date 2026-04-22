@@ -1,0 +1,162 @@
+package components
+
+import (
+	"github.com/forrest-bajbek/bombs/types"
+	"fmt"
+)
+
+func linkToSSE(chatID int) string {
+	return fmt.Sprintf("/chat/%d/message/events", chatID)
+}
+
+templ ChatPage(chat *types.Chat) {
+	@BasePage(chat.Name) {
+		@ChatNav(chat) {
+			<style>
+				.chat-container {
+						height: 100vh;
+						display: flex;
+						flex-direction: column;
+				}
+
+				.messages-container {
+						flex-grow: 1;
+						overflow-y: auto;
+						padding: 20px;
+						background-color: #0F0F0F;
+				}
+
+				.message {
+						margin-bottom: 15px;
+						padding: 10px;
+						border-radius: 8px;
+						max-width: 70%;
+				}
+
+				.message-received {
+						background-color: #2D2D2D;
+						border: 1px solid #E1E1E1;
+						margin-right: auto;
+				}
+
+				.message-sent {
+						background-color: #2150E8;
+						border: 1px solid #E5EBFE;
+						margin-left: auto;
+				}
+
+				.message-input-container {
+						position: fixed;
+						bottom: 0;
+						left: 0;
+						right: 0;
+						padding: 15px;
+						background-color: #0F0F0F;
+						border-top: 1px solid #e5e5e5;
+				}
+			</style>
+
+			<!-- Messages -->
+			<div class="chat-container">
+				<div id="messageList" class="messages-container">
+				</div>
+
+				<!-- Input Container -->
+				<div class="message-input-container">
+					@MessageForm(chat)
+				</div>
+
+			</div>
+			<script>
+				const messageFeed = new EventSource({{ linkToSSE(chat.ID) }});
+				const messageList = document.getElementById('messageList');
+
+				messageFeed.addEventListener("newMessage", (event) => {
+					const m = JSON.parse(event.data);
+					const messageDiv = document.createElement('div');
+					messageDiv.className = m.is_sender ? "message message-sent" : "message message-received";
+					messageDiv.innerHTML = `
+						<a href="/chat/${ m.chat_id }/message/${ m.id }">
+							<p><strong>${ m.username }@${ m.created_at }</strong></p>
+							<p>${ m.text }</p>
+						</a>
+					`;
+					messageList.append(messageDiv);
+					messageList.scrollTop = messageList.scrollHeight;
+				});
+
+				messageFeed.onerror = (error) => {
+					console.error('SSE error:', error);
+					messageFeed.close();
+				};
+
+				// close event source when leaving page
+				window.addEventListener('beforeunload', () => {
+						messageFeed.close();
+				});
+				window.addEventListener('onunload', () => {
+						messageFeed.close();
+				});
+				navigation.addEventListener("navigate", e => {
+						messageFeed.close();
+				});
+			</script>
+		}
+	}
+}
+
+func messageSendURL(chatID int) string {
+	return fmt.Sprintf("/chat/%d/message/create", chatID)
+}
+
+templ MessageForm(chat *types.Chat) {
+	<form hx-post={ chat.PartialChatMessageCreateLink() } hx-target="this" hx-swap="outerHTML">
+		<div class="field has-addons">
+			<div class="control is-expanded">
+				<input
+					id="messageInput"
+					class="input"
+					type="text"
+					name="text"
+					placeholder="Type your message here..."
+					autocomplete="off"
+				>
+			</div>
+			<div class="control">
+				<button id="sendBtn" class="button is-primary" type="submit">Send</button>
+				</div>
+		</div>
+	</form>
+	<script>
+		const messageInput = document.getElementById('messageInput');
+		const sendBtn = document.getElementById('sendBtn');
+		async function handleSend() {
+			const message = messageInput.value.trim();
+			if (!message) return;
+			sendBtn.disabled = true;
+			sendBtn.textContent = 'Sending...';
+			try {
+				await fetch({{ messageSendURL(chat.ID) }}, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({message})
+				});
+				messageInput.value = '';
+				messageInput.focus();
+			} catch (error) {
+				console.error('Failed to send message:', error);
+				window.location.reload();
+			} finally {
+				sendBtn.disabled = false;
+				sendBtn.textContent = 'Send';
+			}
+		};
+		sendBtn.addEventListener('click', handleSend)
+		messageInput.addEventListener('keydown', (e) => {
+			if (e.key === 'Enter') {
+				e.preventDefault();
+				handleSend();
+			}
+		})
+	</script>
+}

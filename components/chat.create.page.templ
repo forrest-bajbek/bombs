@@ -1,0 +1,23 @@
+package components
+
+import "github.com/forrest-bajbek/bombs/types"
+
+templ ChatCreatePage(user *types.User) {
+@BasePage("Create Chat") {
+@BaseNav(user) {
+<div class="box content">
+	<a class="button" href="/">Back</a>
+	<h1>Create New Chat</h1>
+	<form action="/chat/create" method="POST">
+		<div class="field">
+			<label class="label">Name</label>
+			<div class="control">
+				<input class="input" type="text" placeholder="Super Secret Team :)" name="chatName" />
+			</div>
+		</div>
+		<button class="button is-primary">Create Chat</button>
+	</form>
+</div>
+}
+}
+}

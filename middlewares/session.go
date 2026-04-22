@@ -4,49 +4,36 @@ import (
 	"context"
 	"net/http"
 	"strconv"
-	"time"
+
+	"github.com/forrest-bajbek/bombs/token"
 )
 
-func Session(next http.Handler) http.Handler {
+func Session(next http.Handler, tokenMaker *token.JWTMaker) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Incoming request
-		// ----------------------------------------------------------------------------
-		sessionCookie, err := r.Cookie("session")
+		cookie, err := r.Cookie("authToken")
 		if err != nil {
-			// No cookie. Serve request
+			// log.Printf("++ Session: authToken missing")
 			next.ServeHTTP(w, r)
-		} else {
-			// Extract userID from cookie, add to request context, then serve request
-			userID := sessionCookie.Value
-			ctx := context.WithValue(r.Context(), AuthUserID, userID)
-			req := r.WithContext(ctx)
-			next.ServeHTTP(w, req)
+			return
 		}
 
-		// Outgoing request
-		// ----------------------------------------------------------------------------
-		// Check for userID in context
-		userID, ok := r.Context().Value(AuthUserID).(int)
-		if ok {
-			// If userID exists, set session cookie
-			cookie := &http.Cookie{
-				Name:     "session",
-				Value:    strconv.Itoa(userID),
-				Path:     "/",
-				Expires:  time.Now().Add(24 * time.Hour), // Optional
-				HttpOnly: true,                           // Helps prevent XSS
-				Secure:   r.TLS != nil,                   // Set only on HTTPS
-				SameSite: http.SameSiteLaxMode,
-			}
-			http.SetCookie(w, cookie)
-		} else {
-			// If userID doesn't exist, ensure session cookie gets deleted
-			cookie := &http.Cookie{
-				Name:   "session",
-				Value:  "",
-				MaxAge: -1,
-			}
-			http.SetCookie(w, cookie)
+		tokenStr := cookie.Value
+		// log.Printf("++ Session: authToken found")
+		authClaims, err := tokenMaker.ValidateAuthToken(tokenStr)
+		if err != nil {
+			// log.Printf("++ Session: authToken not valid: %s", err.Error())
+			next.ServeHTTP(w, r)
+			return
 		}
+
+		// log.Printf("++ Session: Setting userID in request context")
+		userID, err := strconv.Atoi(authClaims.UserID)
+		if err != nil {
+			// log.Printf("++ Session: Error converting userID to int")
+			next.ServeHTTP(w, r)
+			return
+		}
+		ctx := context.WithValue(r.Context(), AuthUserID, userID)
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

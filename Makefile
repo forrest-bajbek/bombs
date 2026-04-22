@@ -10,5 +10,11 @@ watch:
 		--build.include_ext "go, tmpl, sql, html" \
 		--misc.clean_on_exit "true"
 
+migration:
+	goose create add_some_thing sql
+
+clear:
+	rm -f user.db
+
 templ:
 	templ generate --watch --cmd="go run ." --proxy="http://localhost:9000"

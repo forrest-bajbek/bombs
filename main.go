@@ -5,9 +5,14 @@ import (
 	"embed"
 	"log"
 
+	"github.com/forrest-bajbek/bombs/handlers"
+	"github.com/forrest-bajbek/bombs/hub"
 	"github.com/forrest-bajbek/bombs/server"
+	"github.com/forrest-bajbek/bombs/services"
 	"github.com/forrest-bajbek/bombs/sqlite"
-	"github.com/forrest-bajbek/bombs/user"
+	"github.com/forrest-bajbek/bombs/token"
+	"github.com/forrest-bajbek/bombs/utils"
+	_ "github.com/joho/godotenv/autoload"
 
 	_ "github.com/ncruces/go-sqlite3/driver"
 	"github.com/pressly/goose/v3"
@@ -17,28 +22,65 @@ import (
 var embedMigrations embed.FS
 
 func main() {
-
 	// Database
-	MainDb, err := sql.Open("sqlite3", "file:user.db")
+	db, err := sql.Open("sqlite3", "file:bombs.db")
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
-	defer MainDb.Close()
+	defer db.Close()
 
 	// Database Migrations
 	goose.SetBaseFS(embedMigrations)
 	if err := goose.SetDialect("sqlite3"); err != nil {
 		panic(err)
 	}
-	if err := goose.Up(MainDb, "migrations/MainDb"); err != nil {
+	if err := goose.Up(db, "migrations"); err != nil {
 		panic(err)
 	}
 
-	rUser := sqlite.NewUserRepository(MainDb)
-	sUser := user.NewService(rUser)
-	svr := server.NewServer(sUser)
-	if err := svr.ListenAndServe(":9000"); err != nil {
-		log.Fatal(err)
+	// // last migration is always the message table
+	// memdb_exists, err := sqlite.IsDatabaseAttached(db, "memdb")
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// if !memdb_exists {
+	// 	_, err := db.Exec("ATTACH DATABASE 'file:memdb?mode=memory&cache=shared' AS memdb")
+	// 	if err != nil {
+	// 		panic(err)
+	// 	}
+	// }
+	// if err := goose.Down(db, "migrations"); err != nil {
+	// 	panic(err)
+	// }
+	// if err := goose.Up(db, "migrations"); err != nil {
+	// 	panic(err)
+	// }
+
+	tokenMaker := token.NewJWTMaker()
+	encrypter := utils.NewEncrypter()
+
+	// Repository contains all database logic
+	repo := sqlite.NewRepo(db, encrypter)
+	err = repo.EnsureAdmin()
+	if err != nil {
+		panic(err)
 	}
 
+	// Service is an "interface", or abstraction on top of the repository.
+	// This allows you to implement multiple storage mechanisms and swap them interchangeably.
+	service := services.NewService(repo)
+
+	// Set up channels for existing chats
+	messageHub := hub.NewMessageHub()
+	go messageHub.Run()
+
+	// Handlers
+	handler := handlers.NewHandler(service, tokenMaker, messageHub)
+
+	// Server contains routing logic
+	s := server.NewServer(handler, service, tokenMaker)
+
+	if err := s.ListenAndServe(":9000"); err != nil {
+		log.Fatal(err)
+	}
 }

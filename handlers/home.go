@@ -1,0 +1,27 @@
+package handlers
+
+import (
+	"context"
+	"net/http"
+
+	"github.com/forrest-bajbek/bombs/components"
+	"github.com/forrest-bajbek/bombs/middlewares"
+	"github.com/forrest-bajbek/bombs/types"
+)
+
+func (h *Handler) HomePage(w http.ResponseWriter, r *http.Request) {
+	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
+	if !ok {
+		http.Error(w, "Could not retrieve user from context", http.StatusBadRequest)
+		return
+	}
+
+	chatPreviews, err := h.service.GetChatPreview(requestingUser.ID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	component := components.HomePage(requestingUser, chatPreviews)
+	component.Render(context.Background(), w)
+}

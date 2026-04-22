@@ -1,0 +1,170 @@
+package components
+
+import "github.com/forrest-bajbek/bombs/types"
+import "fmt"
+
+templ ChatProfilePage(chat *types.Chat, chatUsers *[]types.User, requestingUserIsAdmin bool) {
+	@BasePage("Chat Profile") {
+		@ChatProfileNav(chat) {
+			<div class="box content">
+				<h1>Chat Info</h1>
+				@PartialChatNameDisplay(chat.Name, chat.PartialChatNameFormLink())
+
+				<h1>Chat Actions</h1>
+				@ChatDeleteForm(chat.ChatProfileDeleteLink())
+
+				<h1>Chat Users</h1>
+				@ChatUsers(chat.ID, chatUsers)
+
+				<h1>Add Users</h1>
+				if requestingUserIsAdmin {
+					<p>Can't find your friend? <a href="/user/invite">Invite them!</a></p>
+				}
+				@ChatUserAddSearch(chat.ID)
+			</div>
+		}
+	}
+}
+
+// Nav
+// ------------------------------------------------------------------------------------
+templ ChatProfileNav(chat *types.Chat) {
+	@BasePage("Chat Profile") {
+		<nav class="navbar is-fixed-top has-shadow" role="navigation">
+			<div class="navbar-brand">
+				<a class="navbar-item button" href={ chat.ChatLink() }>Back</a>
+			</div>
+		</nav>
+		{ children... }
+	}
+}
+
+// Chat Name
+// ------------------------------------------------------------------------------------
+templ PartialChatNameDisplay(chatName string, linkToForm string) {
+	<div hx-target="this" hx-swap="outerHTML">
+		<p>Chat Name: { chatName }</p>
+		<button class="button is-primary" hx-get={ linkToForm }>Edit</button>
+	</div>
+}
+
+templ PartialChatNameForm(chatName string, linkToForm string, linkToDisplay string) {
+	<form hx-put={ linkToForm } hx-target="this" hx-swap="outerHTML">
+		<input class="input" type="text" placeholder="chatName" name="chatName" value={ chatName } />
+		<button class="button is-primary" type="submit">Submit</button>
+		<button class="button is-danger" hx-get={ linkToDisplay }>Cancel</button>
+	</form>
+}
+
+// Chat Actions
+// ------------------------------------------------------------------------------------
+templ ChatDeleteForm(link string) {
+	<form
+		action={ link }
+		method="POST"
+		onsubmit="return confirm('Are you sure? This will delete the chat.');"
+	>
+		<button class="button is-danger">Delete Chat</button>
+	</form>
+}
+
+// Chat Users
+// ------------------------------------------------------------------------------------
+templ ChatUsers(chatID int, users *[]types.User) {
+	<table class="table">
+		<tbody>
+			for _, user := range *users {
+				<tr>
+					<th>{ user.Username }</th>
+					<td>@PartialChatUserRemove(chatID, user.ID)</td>
+				</tr>
+			}
+		</tbody>
+	</table>
+}
+
+templ PartialChatUserRemove(chatID int, userID int) {
+	<form
+		hx-delete={ fmt.Sprintf("/partial/chat/%d/user/%d/remove", chatID, userID) }
+		hx-target="this"
+		hx-swap="outerHTML"
+	>
+		<button class="button is-danger">Delete</button>
+	</form>
+}
+
+templ PartialChatUserRemoveUndo(chatID int, userID int) {
+	<form
+		hx-post={ fmt.Sprintf("/partial/chat/%d/user/%d/remove/undo", chatID, userID) }
+		hx-target="this"
+		hx-swap="outerHTML"
+	>
+		<button class="button is-primary">Deleted (undo)</button>
+	</form>
+}
+
+// Add Chat Users
+// ------------------------------------------------------------------------------------
+templ ChatUserAddSearch(chatID int) {
+	<span class="htmx-indicator">Searching...</span>
+	<input
+		class="input"
+		type="search"
+		name="search_term"
+		placeholder="Begin Typing To Search Users..."
+		hx-post={ fmt.Sprintf("/partial/chat/%d/user/search", chatID) }
+		hx-trigger="input changed delay:500ms, keyup[key=='Enter']"
+		hx-target="#search-results"
+		hx-indicator=".htmx-indicator"
+	>
+	<table class="table">
+		<thead>
+			<tr>
+				<th>username</th>
+				<th>action</th>
+			</tr>
+		</thead>
+		<tbody id="search-results">
+		</tbody>
+	</table>
+}
+
+templ PartialChatUserAddSearchResult(chatID int, users *[]types.User) {
+	<tbody id="search-results">
+		if len(*users) == 0 {
+			<tr>
+				<td>No results</td>
+				<td></td>
+			</tr>
+		} else {
+			for _, user := range *users {
+				<tr>
+					<td>{ user.Username }</td>
+					<td>
+						@PartialChatUserAdd(chatID, user.ID)
+					</td>
+				</tr>
+			}
+		}
+	</tbody>
+}
+
+templ PartialChatUserAdd(chatID int, userID int) {
+	<form
+		hx-post={ fmt.Sprintf("/partial/chat/%d/user/%d/add", chatID, userID) }
+		hx-target="this"
+		hx-swap="outerHTML"
+	>
+		<button class="button is-primary">Add</button>
+	</form>
+}
+
+templ PartialChatUserAddUndo(chatID int, userID int) {
+	<form
+		hx-delete={ fmt.Sprintf("/partial/chat/%d/user/%d/add/undo", chatID, userID) }
+		hx-target="this"
+		hx-swap="outerHTML"
+	>
+		<button class="button is-danger">Added! (Undo)</button>
+	</form>
+}

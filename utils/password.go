@@ -1,12 +1,13 @@
 package utils
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"log"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
-// https://gowebexamples.com/password-hashing/
 func HashPassword(password string) string {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -18,4 +19,12 @@ func HashPassword(password string) string {
 func CheckPasswordHash(password, hash string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	return err == nil
+}
+
+func GenerateRandomHexToken(length int) string {
+	bytes := make([]byte, length)
+	if _, err := rand.Read(bytes); err != nil {
+		log.Fatal(err)
+	}
+	return hex.EncodeToString(bytes)
 }

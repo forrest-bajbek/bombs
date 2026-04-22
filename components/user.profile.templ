@@ -1,0 +1,88 @@
+package components
+
+import "github.com/forrest-bajbek/bombs/types"
+
+templ PartialUserProfilePasswordFailure(message string) {
+<form hx-post="/user/profile/partial/password" hx-target="this" hx-swap="outerHTML">
+	<input class="input" type="password" name="old_password" placeholder="old password" />
+	<input class="input" type="password" name="new_password" placeholder="new password" />
+	<button class="button is-danger">Change Password</button>
+	<div class="notification is-danger">{ message }</div>
+</form>
+}
+
+templ PartialUserProfilePasswordSuccess() {
+<form hx-post="/user/profile/partial/password" hx-target="this" hx-swap="outerHTML">
+	<input class="input" type="password" name="old_password" placeholder="old password" />
+	<input class="input" type="password" name="new_password" placeholder="new password" />
+	<button class="button is-danger">Change Password</button>
+	<div id="password-change-success-notification" class="notification is-success">Password changed successfully!</div>
+	<script>
+		const myItem = document.getElementById("password-change-success-notification");
+		setTimeout(() => {
+			if (myItem) {
+				myItem.remove();
+			}
+		}, 5000);
+	</script>
+</form>
+}
+
+templ UserProfilePage(user *types.User) {
+@BasePage("User Profile") {
+@BaseNav(user) {
+<div class="box">
+	<div class="content">
+		<a class="button" href="/">Back</a>
+		<h1>User Profile</h1>
+		<div class="block">
+			<table class="table">
+				<thead>
+					<tr>
+						<th>ID</th>
+						<th>Username</th>
+						<th>IsAdmin</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td>{ user.ID }</td>
+						<td>{ user.Username }</td>
+						<td>{ user.IsAdmin }</td>
+					</tr>
+				</tbody>
+			</table>
+			<form>
+				<a class="button is-danger" href="/user/profile/delete">Delete Account</a>
+			</form>
+		</div>
+		<div class="block">
+			<h1>Change Password</h1>
+			<form hx-post="/user/profile/partial/password" hx-target="this" hx-swap="outerHTML">
+				<input class="input" type="password" name="old_password" placeholder="old password" />
+				<input class="input" type="password" name="new_password" placeholder="new password" />
+				<button class="button is-danger">Change Password</button>
+			</form>
+		</div>
+	</div>
+</div>
+}
+}
+}
+
+templ UserProfileDeletePage(user *types.User) {
+@BasePage("Delete Profile") {
+@BaseNav(user) {
+<div class="box">
+	<div class="content">
+		<h1>Are you sure?</h1>
+		<p>Deleting your account will erase all of your messages from all chats, as well as permanently delete your account.
+		</p>
+		<form action="/user/profile/delete" method="POST">
+			<button class="button is-danger">DELETE ACCOUNT</button>
+		</form>
+	</div>
+</div>
+}
+}
+}

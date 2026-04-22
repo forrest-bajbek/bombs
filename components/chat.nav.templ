@@ -1,0 +1,15 @@
+package components
+
+import "github.com/forrest-bajbek/bombs/types"
+
+templ ChatNav(chat *types.Chat) {
+@BasePage("Chat Profile") {
+<nav class="navbar is-fixed-top has-shadow" role="navigation">
+	<div class="navbar-brand">
+		<a class="navbar-item button" href="/">Back</a>
+		<a class="navbar-item" href={ chat.ChatProfileLink() }>{ chat.Name }</a>
+	</div>
+</nav>
+{ children... }
+}
+}
