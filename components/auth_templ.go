@@ -137,14 +137,14 @@ func LoginPage(username string, password string, errorMessage string) templ.Comp
 					return templ_7745c5c3_Err
 				}
 				if errorMessage != "" {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<article class=\"message is-danger\" id=\"error-message\"><div class=\"message-header\"><p>Error</p><button class=\"delete\" aria-label=\"delete\" id=\"error-message-delete-button\"></button></div><div class=\"message-body\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<article class=\"message is-danger\" id=\"error-message\"><div class=\"message-header\"><p>Error</p></div><div class=\"message-body\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var7 string
 					templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(errorMessage)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/auth.templ`, Line: 62, Col: 46}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/auth.templ`, Line: 61, Col: 46}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 					if templ_7745c5c3_Err != nil {
@@ -155,7 +155,7 @@ func LoginPage(username string, password string, errorMessage string) templ.Comp
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<button class=\"button is-primary\">Log In</button><script>\n\t\t\t\tconst errorMessage = document.getElementById('error-message');\n\t\t\t\tconst errorMessageDeleteBtn = document.getElementById('error-message-delete-button');\n\t\t\t\terrorMessageDeleteBtn.addEventListener('click', () => {\n\t\t\t\t\t\terrorMessage.remove();\n\t\t\t\t});\n\t\t\t\t</script></form>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<button class=\"button is-primary\">Log In</button></form>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}

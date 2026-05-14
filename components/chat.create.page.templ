@@ -2,7 +2,7 @@ package components
 
 import "github.com/forrest-bajbek/bombs/types"
 
-templ ChatCreatePage(user *types.User) {
+templ ChatCreatePage(user *types.User, errorMessage string) {
 @BasePage("Create Chat") {
 @BaseNav(user) {
 <div class="box content">
@@ -12,9 +12,26 @@ templ ChatCreatePage(user *types.User) {
 		<div class="field">
 			<label class="label">Name</label>
 			<div class="control">
-				<input class="input" type="text" placeholder="Super Secret Team :)" name="chatName" />
+				<input
+					class="input"
+					type="text"
+					placeholder="Super Secret Team :)"
+					name="chatName"
+					minlength="1"
+					maxlength="32"
+					autocomplete="off"
+					required
+				/>
 			</div>
 		</div>
+		if errorMessage != "" {
+			<article class="message is-danger" id="error-message">
+				<div class="message-header">
+					<p>Error</p>
+				</div>
+				<div class="message-body">{ errorMessage }</div>
+			</article>
+		}
 		<button class="button is-primary">Create Chat</button>
 	</form>
 </div>

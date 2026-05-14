@@ -96,7 +96,7 @@ func (h *Handler) PartialChatNameForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	component := components.PartialChatNameForm(chat.Name, chat.PartialChatNameFormLink(), chat.PartialChatNameDisplayLink())
+	component := components.PartialChatNameForm(chat.Name, chat.PartialChatNameFormLink(), chat.PartialChatNameDisplayLink(), "")
 	component.Render(context.Background(), w)
 }
 
@@ -125,13 +125,15 @@ func (h *Handler) PartialChatNameFormSubmit(w http.ResponseWriter, r *http.Reque
 
 	err = r.ParseForm()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		component := components.PartialChatNameForm(chat.Name, chat.PartialChatNameFormLink(), chat.PartialChatNameDisplayLink(), err.Error())
+		component.Render(context.Background(), w)
 		return
 	}
 	updatedChatName := r.PostForm.Get("chatName")
 	updatedChat, err := h.service.UpdateChat(requestingUser.ID, chat.ID, updatedChatName)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		component := components.PartialChatNameForm(updatedChatName, chat.PartialChatNameFormLink(), chat.PartialChatNameDisplayLink(), err.Error())
+		component.Render(context.Background(), w)
 		return
 	}
 

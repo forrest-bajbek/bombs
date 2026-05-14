@@ -48,9 +48,25 @@ templ PartialChatNameDisplay(chatName string, linkToForm string) {
 	</div>
 }
 
-templ PartialChatNameForm(chatName string, linkToForm string, linkToDisplay string) {
+templ PartialChatNameForm(chatName string, linkToForm string, linkToDisplay string, errorMessage string) {
 	<form hx-put={ linkToForm } hx-target="this" hx-swap="outerHTML">
-		<input class="input" type="text" placeholder="chatName" name="chatName" value={ chatName } />
+		<input
+			class="input"
+			type="text"
+			placeholder="chatName"
+			name="chatName"
+			minlength="1"
+			maxlength="32"
+			value={ chatName }
+		/>
+		if errorMessage != "" {
+			<article class="message is-danger" id="error-message">
+				<div class="message-header">
+					<p>Error</p>
+				</div>
+				<div class="message-body">{ errorMessage }</div>
+			</article>
+		}
 		<button class="button is-primary" type="submit">Submit</button>
 		<button class="button is-danger" hx-get={ linkToDisplay }>Cancel</button>
 	</form>

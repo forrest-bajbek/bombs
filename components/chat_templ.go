@@ -140,13 +140,13 @@ func MessageForm(chat *types.Chat) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\" hx-target=\"this\" hx-swap=\"outerHTML\"><div class=\"field has-addons\"><div class=\"control is-expanded\"><input id=\"messageInput\" class=\"input\" type=\"text\" name=\"text\" placeholder=\"Type your message here...\" autocomplete=\"off\"></div><div class=\"control\"><button id=\"sendBtn\" class=\"button is-primary\" type=\"submit\">Send</button></div></div></form><script>\n\t\tconst messageInput = document.getElementById('messageInput');\n\t\tconst sendBtn = document.getElementById('sendBtn');\n\t\tasync function handleSend() {\n\t\t\tconst message = messageInput.value.trim();\n\t\t\tif (!message) return;\n\t\t\tsendBtn.disabled = true;\n\t\t\tsendBtn.textContent = 'Sending...';\n\t\t\ttry {\n\t\t\t\tawait fetch(")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\" hx-target=\"this\" hx-swap=\"outerHTML\"><div class=\"field has-addons\"><div class=\"control is-expanded\"><input id=\"messageInput\" class=\"input\" type=\"text\" name=\"text\" placeholder=\"Type your message here...\" autocomplete=\"off\" minlength=\"1\" maxlength=\"1024\" required></div><div class=\"control\"><button id=\"sendBtn\" class=\"button is-primary\" type=\"submit\">Send</button></div></div></form><script>\n\t\tconst messageInput = document.getElementById('messageInput');\n\t\tconst sendBtn = document.getElementById('sendBtn');\n\t\tasync function handleSend() {\n\t\t\tconst message = messageInput.value.trim();\n\t\t\tif (!message) return;\n\t\t\tsendBtn.disabled = true;\n\t\t\tsendBtn.textContent = 'Sending...';\n\t\t\ttry {\n\t\t\t\tawait fetch(")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		templ_7745c5c3_Var7, templ_7745c5c3_Err := templruntime.ScriptContentOutsideStringLiteral(messageSendURL(chat.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/chat.templ`, Line: 139, Col: 42}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/chat.templ`, Line: 142, Col: 42}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var7)
 		if templ_7745c5c3_Err != nil {

@@ -57,19 +57,11 @@ templ LoginPage(username string, password string, errorMessage string) {
 					<article class="message is-danger" id="error-message">
 						<div class="message-header">
 							<p>Error</p>
-							<button class="delete" aria-label="delete" id="error-message-delete-button"></button>
 						</div>
 						<div class="message-body">{ errorMessage }</div>
 					</article>
 				}
 				<button class="button is-primary">Log In</button>
-				<script>
-				const errorMessage = document.getElementById('error-message');
-				const errorMessageDeleteBtn = document.getElementById('error-message-delete-button');
-				errorMessageDeleteBtn.addEventListener('click', () => {
-						errorMessage.remove();
-				});
-				</script>
 			</form>
 		}
 	}

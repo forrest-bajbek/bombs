@@ -120,6 +120,9 @@ templ MessageForm(chat *types.Chat) {
 					name="text"
 					placeholder="Type your message here..."
 					autocomplete="off"
+					minlength="1"
+					maxlength="1024"
+					required
 				>
 			</div>
 			<div class="control">

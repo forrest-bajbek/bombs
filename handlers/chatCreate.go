@@ -17,7 +17,7 @@ func (h *Handler) ChatCreatePage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	component := components.ChatCreatePage(requestingUser)
+	component := components.ChatCreatePage(requestingUser, "")
 	component.Render(context.Background(), w)
 }
 
@@ -30,14 +30,16 @@ func (h *Handler) ChatCreate(w http.ResponseWriter, r *http.Request) {
 
 	err := r.ParseForm()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		component := components.ChatCreatePage(requestingUser, err.Error())
+		component.Render(context.Background(), w)
 		return
 	}
 
 	chatName := r.PostForm.Get("chatName")
 	chatID, err := h.service.CreateChat(requestingUser.ID, chatName)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		component := components.ChatCreatePage(requestingUser, err.Error())
+		component.Render(context.Background(), w)
 		return
 	}
 
