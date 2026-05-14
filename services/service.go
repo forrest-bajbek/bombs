@@ -102,23 +102,19 @@ func (s *Service) EnsureAdmin() error {
 
 // Chat
 func (s *Service) CreateChat(requestingUserID int, chatName string) (int, error) {
-	if len(chatName) < 1 {
-		return -1, errors.New("Chat name must be at least 1 character.")
-	}
-	if len(chatName) > 32 {
-		return -1, errors.New("Chat name must be less than 32 characters.")
+	if len(chatName) < 1 || len(chatName) > 32 {
+		return -1, errors.New("Chat name must be between 1 and 32 characters.")
 	}
 	return s.repo.CreateChat(requestingUserID, chatName)
 }
+
 func (s *Service) UpdateChat(requestingUserID int, chatID int, chatName string) (*types.Chat, error) {
-	if len(chatName) < 1 {
-		return nil, errors.New("Chat name must be at least 1 character.")
-	}
-	if len(chatName) > 32 {
-		return nil, errors.New("Chat name must be less than 32 characters.")
+	if len(chatName) < 1 || len(chatName) > 32 {
+		return nil, errors.New("Chat name must be between 1 and 32 characters.")
 	}
 	return s.repo.UpdateChat(requestingUserID, chatID, chatName)
 }
+
 func (s *Service) IsUserInChat(userID int, chatID int) (bool, error) {
 	return s.repo.IsUserInChat(userID, chatID)
 }

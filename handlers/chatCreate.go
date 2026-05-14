@@ -16,8 +16,7 @@ func (h *Handler) ChatCreatePage(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/login", http.StatusFound)
 		return
 	}
-
-	component := components.ChatCreatePage(requestingUser, "")
+	component := components.ChatCreatePage(requestingUser, "", "")
 	component.Render(context.Background(), w)
 }
 
@@ -30,7 +29,7 @@ func (h *Handler) ChatCreate(w http.ResponseWriter, r *http.Request) {
 
 	err := r.ParseForm()
 	if err != nil {
-		component := components.ChatCreatePage(requestingUser, err.Error())
+		component := components.ChatCreatePage(requestingUser, "", err.Error())
 		component.Render(context.Background(), w)
 		return
 	}
@@ -38,7 +37,7 @@ func (h *Handler) ChatCreate(w http.ResponseWriter, r *http.Request) {
 	chatName := r.PostForm.Get("chatName")
 	chatID, err := h.service.CreateChat(requestingUser.ID, chatName)
 	if err != nil {
-		component := components.ChatCreatePage(requestingUser, err.Error())
+		component := components.ChatCreatePage(requestingUser, chatName, err.Error())
 		component.Render(context.Background(), w)
 		return
 	}
