@@ -51,17 +51,11 @@ func NewService(repo Repo) *Service {
 
 // User
 func (s *Service) CreateUser(username string, password string) (int, error) {
-	if len(username) < 2 {
-		return -1, errors.New("Username must be at least 2 characters.")
+	if len(username) < 2 || len(username) > 24 {
+		return -1, errors.New("Username must be betwee 2 and 24 characters.")
 	}
-	if len(username) > 24 {
-		return -1, errors.New("Username must be less than 24 characters.")
-	}
-	if len(password) < 6 {
-		return -1, errors.New("Password must be at least 6 characters.")
-	}
-	if len(password) > 64 {
-		return -1, errors.New("Password must be less than 64 characters.")
+	if len(password) < 6 || len(password) > 64 {
+		return -1, errors.New("Password must be between 6 and 64 characters.")
 	}
 	return s.repo.CreateUser(username, password)
 }
@@ -74,17 +68,19 @@ func (s *Service) CheckPassword(username string, password string) (int, error) {
 }
 
 func (s *Service) ChangePassword(username string, old_password string, new_password string) error {
-	if len(new_password) < 6 {
-		return errors.New("New password must be at least 6 characters.")
-	}
-	if len(new_password) > 64 {
-		return errors.New("New password must be less than 64 characters.")
+	if len(new_password) < 6 || len(new_password) > 64 {
+		return errors.New("New password must be between 6 and 64 characters.")
 	}
 	return s.repo.ChangePassword(username, old_password, new_password)
 }
+
 func (s *Service) UserExists(username string) (bool, error) {
+	if len(username) < 2 || len(username) > 24 {
+		return false, errors.New("Usernames must be between 2 and 24 characters long.")
+	}
 	return s.repo.UserExists(username)
 }
+
 func (s *Service) GetUserByID(userID int) (*types.User, error) {
 	return s.repo.GetUserByID(userID)
 }

@@ -12,7 +12,7 @@ import (
 func (h *Handler) UserProfilePage(w http.ResponseWriter, r *http.Request) {
 	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
 	if !ok {
-		http.Error(w, "Could not retrieve user from context", 400)
+		http.Redirect(w, r, "/login", http.StatusFound)
 	}
 
 	component := components.UserProfilePage(requestingUser)
@@ -22,7 +22,7 @@ func (h *Handler) UserProfilePage(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) UserProfileDeletePage(w http.ResponseWriter, r *http.Request) {
 	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
 	if !ok {
-		http.Error(w, "Could not retrieve user from context", 400)
+		http.Redirect(w, r, "/login", http.StatusFound)
 	}
 	component := components.UserProfileDeletePage(requestingUser)
 	component.Render(context.Background(), w)
@@ -31,7 +31,7 @@ func (h *Handler) UserProfileDeletePage(w http.ResponseWriter, r *http.Request) 
 func (h *Handler) UserProfileDelete(w http.ResponseWriter, r *http.Request) {
 	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
 	if !ok {
-		http.Error(w, "Could not retrieve user from context", 400)
+		http.Redirect(w, r, "/login", http.StatusFound)
 	}
 
 	err := h.service.DeleteMessageByUserID(requestingUser.ID)
@@ -55,7 +55,7 @@ func (h *Handler) UserProfileDelete(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) UserProfilePartialPassword(w http.ResponseWriter, r *http.Request) {
 	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
 	if !ok {
-		http.Error(w, "Could not retrieve user from context", 400)
+		http.Redirect(w, r, "/login", http.StatusFound)
 	}
 
 	err := r.ParseForm()
