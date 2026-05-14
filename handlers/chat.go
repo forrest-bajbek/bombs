@@ -16,7 +16,7 @@ import (
 func (h *Handler) ChatPage(w http.ResponseWriter, r *http.Request) {
 	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
 	if !ok {
-		http.Error(w, "Could not retrieve user from context", http.StatusBadRequest)
+		http.Redirect(w, r, "/login", http.StatusFound)
 		return
 	}
 
@@ -43,7 +43,7 @@ func (h *Handler) ChatPage(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) MessageCreate(w http.ResponseWriter, r *http.Request) {
 	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
 	if !ok {
-		http.Error(w, "Could not retrieve user from context", http.StatusBadRequest)
+		http.Redirect(w, r, "/login", http.StatusFound)
 		return
 	}
 	chat_id := r.PathValue("chat_id")
@@ -81,7 +81,7 @@ func (h *Handler) MessageCreate(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) MessageEvents(w http.ResponseWriter, r *http.Request) {
 	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
 	if !ok {
-		http.Error(w, "Could not retrieve user from context", http.StatusBadRequest)
+		http.Redirect(w, r, "/login", http.StatusFound)
 	}
 	chat_id := r.PathValue("chat_id")
 	if chat_id == "" {
