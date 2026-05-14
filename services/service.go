@@ -148,9 +148,14 @@ func (s *Service) DeleteChatUserByUserID(userID int) error {
 func (s *Service) GetChatUserByUserID(requestingUserID int, chatID int, userID int) (int, error) {
 	return s.repo.GetChatUserByUserID(requestingUserID, chatID, userID)
 }
+
 func (s *Service) SearchForNewUsers(requestingUserID int, chatID int, search_term string) (*[]types.User, error) {
+	if len(search_term) > 24 {
+		return &[]types.User{}, nil
+	}
 	return s.repo.SearchForNewUsers(requestingUserID, chatID, search_term)
 }
+
 func (s *Service) GetChatIDsForChannels() ([]int, error) {
 	return s.repo.GetChatIDsForChannels()
 }

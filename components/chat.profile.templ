@@ -24,7 +24,31 @@ templ ChatProfilePage(chat *types.Chat, chatUsers *[]types.User, requestingUserI
 			if requestingUserIsAdmin {
 				<p>Can't find your friend? <a href="/user/invite">Invite them!</a></p>
 			}
-			@ChatUserAddSearch(chat.ID)
+			<span class="htmx-indicator">Searching...</span>
+			<input
+				class="input"
+				type="search"
+				name="search_term"
+				placeholder="Begin Typing To Search Users..."
+				hx-post={ fmt.Sprintf("/partial/chat/%d/user/search", chat.ID) }
+				hx-trigger="input changed delay:500ms, keyup[key=='Enter']"
+				hx-target="#search-results"
+				hx-indicator=".htmx-indicator"
+				hx-validate="true"
+				minlength="1"
+				maxlength="24"
+				required
+			>
+			<table class="table">
+				<thead>
+					<tr>
+						<th>username</th>
+						<th>action</th>
+					</tr>
+				</thead>
+				<tbody id="search-results">
+				</tbody>
+			</table>
 		</div>
 	}
 }
@@ -106,30 +130,6 @@ templ PartialChatUserRemoveUndo(chatID int, userID int) {
 
 // Add Chat Users
 // ------------------------------------------------------------------------------------
-templ ChatUserAddSearch(chatID int) {
-	<span class="htmx-indicator">Searching...</span>
-	<input
-		class="input"
-		type="search"
-		name="search_term"
-		placeholder="Begin Typing To Search Users..."
-		hx-post={ fmt.Sprintf("/partial/chat/%d/user/search", chatID) }
-		hx-trigger="input changed delay:500ms, keyup[key=='Enter']"
-		hx-target="#search-results"
-		hx-indicator=".htmx-indicator"
-	>
-	<table class="table">
-		<thead>
-			<tr>
-				<th>username</th>
-				<th>action</th>
-			</tr>
-		</thead>
-		<tbody id="search-results">
-		</tbody>
-	</table>
-}
-
 templ PartialChatUserAddSearchResult(chatID int, users *[]types.User) {
 	<tbody id="search-results">
 		if len(*users) == 0 {
