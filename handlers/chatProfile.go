@@ -15,7 +15,7 @@ import (
 func (h *Handler) ChatProfilePage(w http.ResponseWriter, r *http.Request) {
 	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
 	if !ok {
-		http.Error(w, "Could not retrieve user from context", http.StatusBadRequest)
+		http.Redirect(w, r, "/login", http.StatusFound)
 	}
 
 	chat_id := r.PathValue("chat_id")
@@ -49,7 +49,7 @@ func (h *Handler) ChatProfilePage(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) PartialChatNameDisplay(w http.ResponseWriter, r *http.Request) {
 	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
 	if !ok {
-		http.Error(w, "Could not retrieve user from context", http.StatusBadRequest)
+		http.Redirect(w, r, "/login", http.StatusFound)
 		return
 	}
 
@@ -76,7 +76,7 @@ func (h *Handler) PartialChatNameDisplay(w http.ResponseWriter, r *http.Request)
 func (h *Handler) PartialChatNameForm(w http.ResponseWriter, r *http.Request) {
 	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
 	if !ok {
-		http.Error(w, "Could not retrieve user from context", http.StatusBadRequest)
+		http.Redirect(w, r, "/login", http.StatusFound)
 		return
 	}
 
@@ -96,14 +96,14 @@ func (h *Handler) PartialChatNameForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	component := components.PartialChatNameForm(chat.Name, chat.PartialChatNameFormLink(), chat.PartialChatNameDisplayLink())
+	component := components.PartialChatNameForm(chat.Name, chat.PartialChatNameFormLink(), chat.PartialChatNameDisplayLink(), "")
 	component.Render(context.Background(), w)
 }
 
 func (h *Handler) PartialChatNameFormSubmit(w http.ResponseWriter, r *http.Request) {
 	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
 	if !ok {
-		http.Error(w, "Could not retrieve user from context", http.StatusBadRequest)
+		http.Redirect(w, r, "/login", http.StatusFound)
 		return
 	}
 
@@ -125,13 +125,15 @@ func (h *Handler) PartialChatNameFormSubmit(w http.ResponseWriter, r *http.Reque
 
 	err = r.ParseForm()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		component := components.PartialChatNameForm(chat.Name, chat.PartialChatNameFormLink(), chat.PartialChatNameDisplayLink(), err.Error())
+		component.Render(context.Background(), w)
 		return
 	}
 	updatedChatName := r.PostForm.Get("chatName")
 	updatedChat, err := h.service.UpdateChat(requestingUser.ID, chat.ID, updatedChatName)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		component := components.PartialChatNameForm(updatedChatName, chat.PartialChatNameFormLink(), chat.PartialChatNameDisplayLink(), err.Error())
+		component.Render(context.Background(), w)
 		return
 	}
 
@@ -145,7 +147,7 @@ func (h *Handler) PartialChatNameFormSubmit(w http.ResponseWriter, r *http.Reque
 func (h *Handler) ChatProfileDelete(w http.ResponseWriter, r *http.Request) {
 	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
 	if !ok {
-		http.Error(w, "Could not retrieve user from context", http.StatusBadRequest)
+		http.Redirect(w, r, "/login", http.StatusFound)
 		return
 	}
 
@@ -174,7 +176,7 @@ func (h *Handler) ChatProfileDelete(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) PartialChatUserRemove(w http.ResponseWriter, r *http.Request) {
 	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
 	if !ok {
-		http.Error(w, "Could not retrieve user from context", http.StatusBadRequest)
+		http.Redirect(w, r, "/login", http.StatusFound)
 	}
 
 	chat_id := r.PathValue("chat_id")
@@ -211,7 +213,7 @@ func (h *Handler) PartialChatUserRemove(w http.ResponseWriter, r *http.Request) 
 func (h *Handler) PartialChatUserRemoveUndo(w http.ResponseWriter, r *http.Request) {
 	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
 	if !ok {
-		http.Error(w, "Could not retrieve user from context", http.StatusBadRequest)
+		http.Redirect(w, r, "/login", http.StatusFound)
 	}
 
 	chat_id := r.PathValue("chat_id")
@@ -250,7 +252,7 @@ func (h *Handler) PartialChatUserRemoveUndo(w http.ResponseWriter, r *http.Reque
 func (h *Handler) PartialChatUserAddSearchResult(w http.ResponseWriter, r *http.Request) {
 	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
 	if !ok {
-		http.Error(w, "Could not retrieve user from context", http.StatusBadRequest)
+		http.Redirect(w, r, "/login", http.StatusFound)
 	}
 
 	chat_id := r.PathValue("chat_id")
@@ -284,7 +286,7 @@ func (h *Handler) PartialChatUserAddSearchResult(w http.ResponseWriter, r *http.
 func (h *Handler) PartialChatUserAdd(w http.ResponseWriter, r *http.Request) {
 	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
 	if !ok {
-		http.Error(w, "Could not retrieve user from context", http.StatusBadRequest)
+		http.Redirect(w, r, "/login", http.StatusFound)
 	}
 
 	chat_id := r.PathValue("chat_id")
@@ -321,7 +323,7 @@ func (h *Handler) PartialChatUserAdd(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) PartialChatUserAddUndo(w http.ResponseWriter, r *http.Request) {
 	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
 	if !ok {
-		http.Error(w, "Could not retrieve user from context", http.StatusBadRequest)
+		http.Redirect(w, r, "/login", http.StatusFound)
 	}
 
 	chat_id := r.PathValue("chat_id")

@@ -5,37 +5,51 @@ import "fmt"
 
 templ ChatProfilePage(chat *types.Chat, chatUsers *[]types.User, requestingUserIsAdmin bool) {
 	@BasePage("Chat Profile") {
-		@ChatProfileNav(chat) {
-			<div class="box content">
-				<h1>Chat Info</h1>
-				@PartialChatNameDisplay(chat.Name, chat.PartialChatNameFormLink())
-
-				<h1>Chat Actions</h1>
-				@ChatDeleteForm(chat.ChatProfileDeleteLink())
-
-				<h1>Chat Users</h1>
-				@ChatUsers(chat.ID, chatUsers)
-
-				<h1>Add Users</h1>
-				if requestingUserIsAdmin {
-					<p>Can't find your friend? <a href="/user/invite">Invite them!</a></p>
-				}
-				@ChatUserAddSearch(chat.ID)
-			</div>
-		}
-	}
-}
-
-// Nav
-// ------------------------------------------------------------------------------------
-templ ChatProfileNav(chat *types.Chat) {
-	@BasePage("Chat Profile") {
 		<nav class="navbar is-fixed-top has-shadow" role="navigation">
 			<div class="navbar-brand">
 				<a class="navbar-item button" href={ chat.ChatLink() }>Back</a>
 			</div>
 		</nav>
-		{ children... }
+		<div class="box content">
+			<h1>Chat Info</h1>
+			@PartialChatNameDisplay(chat.Name, chat.PartialChatNameFormLink())
+
+			<h1>Chat Actions</h1>
+			@ChatDeleteForm(chat.ChatProfileDeleteLink())
+
+			<h1>Chat Users</h1>
+			@ChatUsers(chat.ID, chatUsers)
+
+			<h1>Add Users</h1>
+			if requestingUserIsAdmin {
+				<p>Can't find your friend? <a href="/user/invite">Invite them!</a></p>
+			}
+			<span class="htmx-indicator">Searching...</span>
+			<input
+				class="input"
+				type="search"
+				name="search_term"
+				placeholder="Begin Typing To Search Users..."
+				hx-post={ fmt.Sprintf("/partial/chat/%d/user/search", chat.ID) }
+				hx-trigger="input changed delay:500ms, keyup[key=='Enter']"
+				hx-target="#search-results"
+				hx-indicator=".htmx-indicator"
+				hx-validate="true"
+				minlength="1"
+				maxlength="24"
+				required
+			>
+			<table class="table">
+				<thead>
+					<tr>
+						<th>username</th>
+						<th>action</th>
+					</tr>
+				</thead>
+				<tbody id="search-results">
+				</tbody>
+			</table>
+		</div>
 	}
 }
 
@@ -48,9 +62,20 @@ templ PartialChatNameDisplay(chatName string, linkToForm string) {
 	</div>
 }
 
-templ PartialChatNameForm(chatName string, linkToForm string, linkToDisplay string) {
+templ PartialChatNameForm(chatName string, linkToForm string, linkToDisplay string, errorMessage string) {
 	<form hx-put={ linkToForm } hx-target="this" hx-swap="outerHTML">
-		<input class="input" type="text" placeholder="chatName" name="chatName" value={ chatName } />
+		<input
+			class="input"
+			type="text"
+			placeholder="chatName"
+			name="chatName"
+			minlength="1"
+			maxlength="32"
+			value={ chatName }
+		/>
+		if errorMessage != "" {
+			<p>Error: { errorMessage }</p>
+		}
 		<button class="button is-primary" type="submit">Submit</button>
 		<button class="button is-danger" hx-get={ linkToDisplay }>Cancel</button>
 	</form>
@@ -105,30 +130,6 @@ templ PartialChatUserRemoveUndo(chatID int, userID int) {
 
 // Add Chat Users
 // ------------------------------------------------------------------------------------
-templ ChatUserAddSearch(chatID int) {
-	<span class="htmx-indicator">Searching...</span>
-	<input
-		class="input"
-		type="search"
-		name="search_term"
-		placeholder="Begin Typing To Search Users..."
-		hx-post={ fmt.Sprintf("/partial/chat/%d/user/search", chatID) }
-		hx-trigger="input changed delay:500ms, keyup[key=='Enter']"
-		hx-target="#search-results"
-		hx-indicator=".htmx-indicator"
-	>
-	<table class="table">
-		<thead>
-			<tr>
-				<th>username</th>
-				<th>action</th>
-			</tr>
-		</thead>
-		<tbody id="search-results">
-		</tbody>
-	</table>
-}
-
 templ PartialChatUserAddSearchResult(chatID int, users *[]types.User) {
 	<tbody id="search-results">
 		if len(*users) == 0 {

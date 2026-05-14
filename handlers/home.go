@@ -12,7 +12,7 @@ import (
 func (h *Handler) HomePage(w http.ResponseWriter, r *http.Request) {
 	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
 	if !ok {
-		http.Error(w, "Could not retrieve user from context", http.StatusBadRequest)
+		http.Redirect(w, r, "/login", http.StatusFound)
 		return
 	}
 

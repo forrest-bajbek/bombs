@@ -1,76 +1,57 @@
 package components
 
-templ LoginNav() {
-	<nav class="navbar is-fixed-top has-shadow" role="navigation">
-		<div class="navbar-brand">
-			<a class="navbar-item" href="/">B💣MBS</a>
-		</div>
-	</nav>
-	{ children... }
-}
-
 templ LoginPage(username string, password string, errorMessage string) {
 	@BasePage("Log In") {
-		@LoginNav() {
-			<form class="box" action="/login" method="POST">
-				<div class="field">
-					<label class="label">Username</label>
-					<div class="control">
-						<input
-							class="input"
-							type="text"
-							placeholder="username"
-							id="username"
-							name="username"
-							minlength="2"
-							maxlength="24"
-							required
-							autocomplete="username"
-							if username != "" {
-								value={ username }
-							}
-						/>
-					</div>
+		<nav class="navbar is-fixed-top has-shadow" role="navigation">
+			<div class="navbar-brand">
+				<a class="navbar-item" href="/">B💣MBS</a>
+			</div>
+		</nav>
+		<form class="box" action="/login" method="POST">
+			<div class="field">
+				<label class="label">Username</label>
+				<div class="control">
+					<input
+						class="input"
+						type="text"
+						placeholder="username"
+						id="username"
+						name="username"
+						minlength="2"
+						maxlength="24"
+						required
+						autocomplete="username"
+						if username != "" {
+							value={ username }
+						}
+					/>
 				</div>
+			</div>
 
-				<div class="field">
-					<label class="label">Password</label>
-					<div class="control">
-						<input
-							class="input"
-							type="password"
-							placeholder="password"
-							id="password"
-							name="password"
-							minlength="6"
-							maxlength="64"
-							required
-							autocomplete="password"
-							if password != "" {
-								value={ password }
-							}
-						/>
-					</div>
+			<div class="field">
+				<label class="label">Password</label>
+				<div class="control">
+					<input
+						class="input"
+						type="password"
+						placeholder="password"
+						id="password"
+						name="password"
+						minlength="6"
+						maxlength="64"
+						required
+						autocomplete="password"
+						if password != "" {
+							value={ password }
+						}
+					/>
 				</div>
+			</div>
 
-				if errorMessage != "" {
-					<article class="message is-danger" id="error-message">
-						<div class="message-header">
-							<p>Error</p>
-							<button class="delete" aria-label="delete" id="error-message-delete-button"></button>
-						</div>
-						<div class="message-body">{ errorMessage }</div>
-					</article>
-				}
-				<button class="button is-primary">Log In</button>
-				<script>
-				const errorMessage = document.getElementById('error-message');
-				const errorMessageDeleteBtn = document.getElementById('error-message-delete-button');
-				errorMessageDeleteBtn.addEventListener('click', () => {
-						errorMessage.remove();
-				});
-				</script>
-			</form>
-		}
+			if errorMessage != "" {
+				<p>Error: { errorMessage }</p>
+			}
+			<button class="button is-primary">Log In</button>
+		</form>
 	}
 }

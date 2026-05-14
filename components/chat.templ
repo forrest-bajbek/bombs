@@ -11,7 +11,6 @@ func linkToSSE(chatID int) string {
 
 templ ChatPage(chat *types.Chat) {
 	@BasePage(chat.Name) {
-		@ChatNav(chat) {
 			<style>
 				.chat-container {
 						height: 100vh;
@@ -55,6 +54,13 @@ templ ChatPage(chat *types.Chat) {
 						border-top: 1px solid #e5e5e5;
 				}
 			</style>
+
+			<nav class="navbar is-fixed-top has-shadow" role="navigation">
+				<div class="navbar-brand">
+					<a class="navbar-item button" href="/">Back</a>
+					<a class="navbar-item" href={ chat.ChatProfileLink() }>{ chat.Name }</a>
+				</div>
+			</nav>
 
 			<!-- Messages -->
 			<div class="chat-container">
@@ -101,7 +107,6 @@ templ ChatPage(chat *types.Chat) {
 						messageFeed.close();
 				});
 			</script>
-		}
 	}
 }
 
@@ -120,6 +125,9 @@ templ MessageForm(chat *types.Chat) {
 					name="text"
 					placeholder="Type your message here..."
 					autocomplete="off"
+					minlength="1"
+					maxlength="1024"
+					required
 				>
 			</div>
 			<div class="control">

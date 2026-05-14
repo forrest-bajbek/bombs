@@ -50,45 +50,53 @@ func ChatPage(chat *types.Chat) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Var3 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-				templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-				templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-				if !templ_7745c5c3_IsBuffer {
-					defer func() {
-						templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-						if templ_7745c5c3_Err == nil {
-							templ_7745c5c3_Err = templ_7745c5c3_BufErr
-						}
-					}()
-				}
-				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<style>\n\t\t\t\t.chat-container {\n\t\t\t\t\t\theight: 100vh;\n\t\t\t\t\t\tdisplay: flex;\n\t\t\t\t\t\tflex-direction: column;\n\t\t\t\t}\n\n\t\t\t\t.messages-container {\n\t\t\t\t\t\tflex-grow: 1;\n\t\t\t\t\t\toverflow-y: auto;\n\t\t\t\t\t\tpadding: 20px;\n\t\t\t\t\t\tbackground-color: #0F0F0F;\n\t\t\t\t}\n\n\t\t\t\t.message {\n\t\t\t\t\t\tmargin-bottom: 15px;\n\t\t\t\t\t\tpadding: 10px;\n\t\t\t\t\t\tborder-radius: 8px;\n\t\t\t\t\t\tmax-width: 70%;\n\t\t\t\t}\n\n\t\t\t\t.message-received {\n\t\t\t\t\t\tbackground-color: #2D2D2D;\n\t\t\t\t\t\tborder: 1px solid #E1E1E1;\n\t\t\t\t\t\tmargin-right: auto;\n\t\t\t\t}\n\n\t\t\t\t.message-sent {\n\t\t\t\t\t\tbackground-color: #2150E8;\n\t\t\t\t\t\tborder: 1px solid #E5EBFE;\n\t\t\t\t\t\tmargin-left: auto;\n\t\t\t\t}\n\n\t\t\t\t.message-input-container {\n\t\t\t\t\t\tposition: fixed;\n\t\t\t\t\t\tbottom: 0;\n\t\t\t\t\t\tleft: 0;\n\t\t\t\t\t\tright: 0;\n\t\t\t\t\t\tpadding: 15px;\n\t\t\t\t\t\tbackground-color: #0F0F0F;\n\t\t\t\t\t\tborder-top: 1px solid #e5e5e5;\n\t\t\t\t}\n\t\t\t</style> <!-- Messages --> <div class=\"chat-container\"><div id=\"messageList\" class=\"messages-container\"></div><!-- Input Container --><div class=\"message-input-container\">")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = MessageForm(chat).Render(ctx, templ_7745c5c3_Buffer)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div></div><script>\n\t\t\t\tconst messageFeed = new EventSource(")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Var4, templ_7745c5c3_Err := templruntime.ScriptContentOutsideStringLiteral(linkToSSE(chat.ID))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/chat.templ`, Line: 71, Col: 61}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var4)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, ");\n\t\t\t\tconst messageList = document.getElementById('messageList');\n\n\t\t\t\tmessageFeed.addEventListener(\"newMessage\", (event) => {\n\t\t\t\t\tconst m = JSON.parse(event.data);\n\t\t\t\t\tconst messageDiv = document.createElement('div');\n\t\t\t\t\tmessageDiv.className = m.is_sender ? \"message message-sent\" : \"message message-received\";\n\t\t\t\t\tmessageDiv.innerHTML = `\n\t\t\t\t\t\t<a href=\"/chat/${ m.chat_id }/message/${ m.id }\">\n\t\t\t\t\t\t\t<p><strong>${ m.username }@${ m.created_at }</strong></p>\n\t\t\t\t\t\t\t<p>${ m.text }</p>\n\t\t\t\t\t\t</a>\n\t\t\t\t\t`;\n\t\t\t\t\tmessageList.append(messageDiv);\n\t\t\t\t\tmessageList.scrollTop = messageList.scrollHeight;\n\t\t\t\t});\n\n\t\t\t\tmessageFeed.onerror = (error) => {\n\t\t\t\t\tconsole.error('SSE error:', error);\n\t\t\t\t\tmessageFeed.close();\n\t\t\t\t};\n\n\t\t\t\t// close event source when leaving page\n\t\t\t\twindow.addEventListener('beforeunload', () => {\n\t\t\t\t\t\tmessageFeed.close();\n\t\t\t\t});\n\t\t\t\twindow.addEventListener('onunload', () => {\n\t\t\t\t\t\tmessageFeed.close();\n\t\t\t\t});\n\t\t\t\tnavigation.addEventListener(\"navigate\", e => {\n\t\t\t\t\t\tmessageFeed.close();\n\t\t\t\t});\n\t\t\t</script>")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				return nil
-			})
-			templ_7745c5c3_Err = ChatNav(chat).Render(templ.WithChildren(ctx, templ_7745c5c3_Var3), templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<style>\n\t\t\t\t.chat-container {\n\t\t\t\t\t\theight: 100vh;\n\t\t\t\t\t\tdisplay: flex;\n\t\t\t\t\t\tflex-direction: column;\n\t\t\t\t}\n\n\t\t\t\t.messages-container {\n\t\t\t\t\t\tflex-grow: 1;\n\t\t\t\t\t\toverflow-y: auto;\n\t\t\t\t\t\tpadding: 20px;\n\t\t\t\t\t\tbackground-color: #0F0F0F;\n\t\t\t\t}\n\n\t\t\t\t.message {\n\t\t\t\t\t\tmargin-bottom: 15px;\n\t\t\t\t\t\tpadding: 10px;\n\t\t\t\t\t\tborder-radius: 8px;\n\t\t\t\t\t\tmax-width: 70%;\n\t\t\t\t}\n\n\t\t\t\t.message-received {\n\t\t\t\t\t\tbackground-color: #2D2D2D;\n\t\t\t\t\t\tborder: 1px solid #E1E1E1;\n\t\t\t\t\t\tmargin-right: auto;\n\t\t\t\t}\n\n\t\t\t\t.message-sent {\n\t\t\t\t\t\tbackground-color: #2150E8;\n\t\t\t\t\t\tborder: 1px solid #E5EBFE;\n\t\t\t\t\t\tmargin-left: auto;\n\t\t\t\t}\n\n\t\t\t\t.message-input-container {\n\t\t\t\t\t\tposition: fixed;\n\t\t\t\t\t\tbottom: 0;\n\t\t\t\t\t\tleft: 0;\n\t\t\t\t\t\tright: 0;\n\t\t\t\t\t\tpadding: 15px;\n\t\t\t\t\t\tbackground-color: #0F0F0F;\n\t\t\t\t\t\tborder-top: 1px solid #e5e5e5;\n\t\t\t\t}\n\t\t\t</style> <nav class=\"navbar is-fixed-top has-shadow\" role=\"navigation\"><div class=\"navbar-brand\"><a class=\"navbar-item button\" href=\"/\">Back</a> <a class=\"navbar-item\" href=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var3 templ.SafeURL
+			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinURLErrs(chat.ChatProfileLink())
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/chat.templ`, Line: 61, Col: 57}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var4 string
+			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(chat.Name)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/chat.templ`, Line: 61, Col: 71}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</a></div></nav><!-- Messages --> <div class=\"chat-container\"><div id=\"messageList\" class=\"messages-container\"></div><!-- Input Container --><div class=\"message-input-container\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = MessageForm(chat).Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div></div><script>\n\t\t\t\tconst messageFeed = new EventSource(")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Var5, templ_7745c5c3_Err := templruntime.ScriptContentOutsideStringLiteral(linkToSSE(chat.ID))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/chat.templ`, Line: 77, Col: 61}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var5)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, ");\n\t\t\t\tconst messageList = document.getElementById('messageList');\n\n\t\t\t\tmessageFeed.addEventListener(\"newMessage\", (event) => {\n\t\t\t\t\tconst m = JSON.parse(event.data);\n\t\t\t\t\tconst messageDiv = document.createElement('div');\n\t\t\t\t\tmessageDiv.className = m.is_sender ? \"message message-sent\" : \"message message-received\";\n\t\t\t\t\tmessageDiv.innerHTML = `\n\t\t\t\t\t\t<a href=\"/chat/${ m.chat_id }/message/${ m.id }\">\n\t\t\t\t\t\t\t<p><strong>${ m.username }@${ m.created_at }</strong></p>\n\t\t\t\t\t\t\t<p>${ m.text }</p>\n\t\t\t\t\t\t</a>\n\t\t\t\t\t`;\n\t\t\t\t\tmessageList.append(messageDiv);\n\t\t\t\t\tmessageList.scrollTop = messageList.scrollHeight;\n\t\t\t\t});\n\n\t\t\t\tmessageFeed.onerror = (error) => {\n\t\t\t\t\tconsole.error('SSE error:', error);\n\t\t\t\t\tmessageFeed.close();\n\t\t\t\t};\n\n\t\t\t\t// close event source when leaving page\n\t\t\t\twindow.addEventListener('beforeunload', () => {\n\t\t\t\t\t\tmessageFeed.close();\n\t\t\t\t});\n\t\t\t\twindow.addEventListener('onunload', () => {\n\t\t\t\t\t\tmessageFeed.close();\n\t\t\t\t});\n\t\t\t\tnavigation.addEventListener(\"navigate\", e => {\n\t\t\t\t\t\tmessageFeed.close();\n\t\t\t\t});\n\t\t\t</script>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -122,37 +130,37 @@ func MessageForm(chat *types.Chat) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var5 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var5 == nil {
-			templ_7745c5c3_Var5 = templ.NopComponent
+		templ_7745c5c3_Var6 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var6 == nil {
+			templ_7745c5c3_Var6 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<form hx-post=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<form hx-post=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var6 string
-		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(chat.PartialChatMessageCreateLink())
+		var templ_7745c5c3_Var7 string
+		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(chat.PartialChatMessageCreateLink())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/chat.templ`, Line: 113, Col: 52}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/chat.templ`, Line: 118, Col: 52}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\" hx-target=\"this\" hx-swap=\"outerHTML\"><div class=\"field has-addons\"><div class=\"control is-expanded\"><input id=\"messageInput\" class=\"input\" type=\"text\" name=\"text\" placeholder=\"Type your message here...\" autocomplete=\"off\"></div><div class=\"control\"><button id=\"sendBtn\" class=\"button is-primary\" type=\"submit\">Send</button></div></div></form><script>\n\t\tconst messageInput = document.getElementById('messageInput');\n\t\tconst sendBtn = document.getElementById('sendBtn');\n\t\tasync function handleSend() {\n\t\t\tconst message = messageInput.value.trim();\n\t\t\tif (!message) return;\n\t\t\tsendBtn.disabled = true;\n\t\t\tsendBtn.textContent = 'Sending...';\n\t\t\ttry {\n\t\t\t\tawait fetch(")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Var7, templ_7745c5c3_Err := templruntime.ScriptContentOutsideStringLiteral(messageSendURL(chat.ID))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/chat.templ`, Line: 139, Col: 42}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var7)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\" hx-target=\"this\" hx-swap=\"outerHTML\"><div class=\"field has-addons\"><div class=\"control is-expanded\"><input id=\"messageInput\" class=\"input\" type=\"text\" name=\"text\" placeholder=\"Type your message here...\" autocomplete=\"off\" minlength=\"1\" maxlength=\"1024\" required></div><div class=\"control\"><button id=\"sendBtn\" class=\"button is-primary\" type=\"submit\">Send</button></div></div></form><script>\n\t\tconst messageInput = document.getElementById('messageInput');\n\t\tconst sendBtn = document.getElementById('sendBtn');\n\t\tasync function handleSend() {\n\t\t\tconst message = messageInput.value.trim();\n\t\t\tif (!message) return;\n\t\t\tsendBtn.disabled = true;\n\t\t\tsendBtn.textContent = 'Sending...';\n\t\t\ttry {\n\t\t\t\tawait fetch(")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, ", {\n\t\t\t\t\tmethod: 'POST',\n\t\t\t\t\theaders: { 'Content-Type': 'application/json' },\n\t\t\t\t\tbody: JSON.stringify({message})\n\t\t\t\t});\n\t\t\t\tmessageInput.value = '';\n\t\t\t\tmessageInput.focus();\n\t\t\t} catch (error) {\n\t\t\t\tconsole.error('Failed to send message:', error);\n\t\t\t\twindow.location.reload();\n\t\t\t} finally {\n\t\t\t\tsendBtn.disabled = false;\n\t\t\t\tsendBtn.textContent = 'Send';\n\t\t\t}\n\t\t};\n\t\tsendBtn.addEventListener('click', handleSend)\n\t\tmessageInput.addEventListener('keydown', (e) => {\n\t\t\tif (e.key === 'Enter') {\n\t\t\t\te.preventDefault();\n\t\t\t\thandleSend();\n\t\t\t}\n\t\t})\n\t</script>")
+		templ_7745c5c3_Var8, templ_7745c5c3_Err := templruntime.ScriptContentOutsideStringLiteral(messageSendURL(chat.ID))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/chat.templ`, Line: 147, Col: 42}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var8)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, ", {\n\t\t\t\t\tmethod: 'POST',\n\t\t\t\t\theaders: { 'Content-Type': 'application/json' },\n\t\t\t\t\tbody: JSON.stringify({message})\n\t\t\t\t});\n\t\t\t\tmessageInput.value = '';\n\t\t\t\tmessageInput.focus();\n\t\t\t} catch (error) {\n\t\t\t\tconsole.error('Failed to send message:', error);\n\t\t\t\twindow.location.reload();\n\t\t\t} finally {\n\t\t\t\tsendBtn.disabled = false;\n\t\t\t\tsendBtn.textContent = 'Send';\n\t\t\t}\n\t\t};\n\t\tsendBtn.addEventListener('click', handleSend)\n\t\tmessageInput.addEventListener('keydown', (e) => {\n\t\t\tif (e.key === 'Enter') {\n\t\t\t\te.preventDefault();\n\t\t\t\thandleSend();\n\t\t\t}\n\t\t})\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

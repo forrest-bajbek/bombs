@@ -21,6 +21,9 @@ templ UserInvitePage(user *types.User) {
 							name="username"
 							placeholder="New Username"
 							id="username"
+							minlength="2"
+							maxlength="24"
+							required
 						>
 					</div>
 				</div>
@@ -32,18 +35,13 @@ templ UserInvitePage(user *types.User) {
 	}
 }
 
-templ PartialUserInviteUserEmpty() {
-	<div id="invite-link-div">
-	</div>
-}
-
-templ PartialUserInviteUserAlreadyExists(username string) {
+templ PartialUserInviteError(errorMessage string) {
 	<div id="invite-link-div">
 		<div class="field">
 			<br/>
 			<label class="label">Error</label>
 			<div class="control">
-				<input class="input" type="text" value="Username already exists!" readonly="true"/>
+				<input class="input" type="text" value={ errorMessage } readonly="true"/>
 			</div>
 		</div>
 	</div>
@@ -71,18 +69,24 @@ templ PartialUserInviteLink(link string) {
 	</div>
 }
 
-templ UserCreatePage(username string, inviteToken string) {
-@BasePage("Create User") {
-@LoginNav() {
-<div class="box content">
-	<h1>Create Account</h1>
-	<form action="/user/create" method="POST">
-		<input id="inviteToken" class="input" type="hidden" name="inviteToken" value={ inviteToken } readonly="true" />
-		<input id="username" class="input" type="text" name="username" value={ username } readonly="true" />
-		<input id="password" class="input" type="password" name="password" placeholder="password" />
-		<button class="button is-primary">Create User</button>
-	</form>
-</div>
-}
-}
+templ UserCreatePage(username string, inviteToken string, errorMessage string) {
+	@BasePage("Create User") {
+		<nav class="navbar is-fixed-top has-shadow" role="navigation">
+			<div class="navbar-brand">
+				<a class="navbar-item" href="/">B💣MBS</a>
+			</div>
+		</nav>
+		<div class="box content">
+			<h1>Create Account</h1>
+			<form action="/user/create" method="POST">
+				<input id="inviteToken" class="input" type="hidden" name="inviteToken" value={ inviteToken } readonly="true" />
+				<input id="username" class="input" type="text" name="username" value={ username } readonly="true" />
+				<input id="password" class="input" type="password" name="password" placeholder="password" />
+				if errorMessage != "" {
+					<p>Error: { errorMessage }</p>
+				}
+				<button class="button is-primary">Create User</button>
+			</form>
+		</div>
+	}
 }
