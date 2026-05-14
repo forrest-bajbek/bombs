@@ -20,6 +20,7 @@ func (h *Handler) LogIn(w http.ResponseWriter, r *http.Request) {
 		component.Render(context.Background(), w)
 		return
 	}
+
 	username := r.PostForm.Get("username")
 	password := r.PostForm.Get("password")
 	userID, err := h.service.CheckPassword(username, password)
@@ -28,12 +29,14 @@ func (h *Handler) LogIn(w http.ResponseWriter, r *http.Request) {
 		component.Render(context.Background(), w)
 		return
 	}
+
 	authToken, _, err := h.tokenMaker.CreateAuthToken(userID)
 	if err != nil {
-		component := components.LoginPage(username, password, err.Error())
+		component := components.LoginPage("", "", err.Error())
 		component.Render(context.Background(), w)
 		return
 	}
+
 	cookie := &http.Cookie{
 		Name:     "authToken",
 		Value:    authToken,

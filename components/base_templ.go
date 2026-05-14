@@ -38,7 +38,7 @@ func BasePage(title string) templ.Component {
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/base.templ`, Line: 13, Col: 16}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/base.templ`, Line: 13, Col: 17}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -91,7 +91,7 @@ func BaseNav(user *types.User) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</div><div class=\"navbar-end\"><a class=\"navbar-item\" href=\"#\" id=\"logout-form-submit\">Logout</a><form id=\"logout-form\" class=\"navbar-item\" action=\"/logout\" method=\"POST\"><script>\n\t\t\t\tdocument.getElementById('logout-form-submit').onclick = function(event) {\n\t\t\t\t\tif (confirm('Log Out?')) {\n\t\t\t\t\t\tevent.preventDefault(); // Prevents the link from following the '#' URL\n\t\t\t\t\t\tdocument.getElementById('logout-form').submit();\n\t\t\t\t\t}\n\t\t\t\t};\n\t\t\t</script></form></div></div><script>\n\t\tdocument.addEventListener('DOMContentLoaded', () => {\n\t\t\t// Get all \"navbar-burger\" elements\n\t\t\tconst $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);\n\t\t\t// Add a click event on each of them\n\t\t\t$navbarBurgers.forEach(el => {\n\t\t\t\tel.addEventListener('click', () => {\n\t\t\t\t\t// Get the target from the \"data-target\" attribute\n\t\t\t\t\tconst target = el.dataset.target;\n\t\t\t\t\tconst $target = document.getElementById(target);\n\t\t\t\t\t// Toggle the \"is-active\" class on both the \"navbar-burger\" and the \"navbar-menu\"\n\t\t\t\t\tel.classList.toggle('is-active');\n\t\t\t\t\t$target.classList.toggle('is-active');\n\t\t\t\t});\n\t\t\t});\n\t\t});\n\t</script></nav>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</div><div class=\"navbar-end\"><a class=\"navbar-item\" href=\"#\" id=\"logout-form-submit\">Logout</a><form id=\"logout-form\" class=\"navbar-item\" action=\"/logout\" method=\"POST\"><script>\n\t\t\t\t\tdocument.getElementById('logout-form-submit').onclick = function(event) {\n\t\t\t\t\t\tif (confirm('Log Out?')) {\n\t\t\t\t\t\t\tevent.preventDefault(); // Prevents the link from following the '#' URL\n\t\t\t\t\t\t\tdocument.getElementById('logout-form').submit();\n\t\t\t\t\t\t}\n\t\t\t\t\t};\n\t\t\t\t</script></form></div></div><script>\n\t\t\tdocument.addEventListener('DOMContentLoaded', () => {\n\t\t\t\t// Get all \"navbar-burger\" elements\n\t\t\t\tconst $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);\n\t\t\t\t// Add a click event on each of them\n\t\t\t\t$navbarBurgers.forEach(el => {\n\t\t\t\t\tel.addEventListener('click', () => {\n\t\t\t\t\t\t// Get the target from the \"data-target\" attribute\n\t\t\t\t\t\tconst target = el.dataset.target;\n\t\t\t\t\t\tconst $target = document.getElementById(target);\n\t\t\t\t\t\t// Toggle the \"is-active\" class on both the \"navbar-burger\" and the \"navbar-menu\"\n\t\t\t\t\t\tel.classList.toggle('is-active');\n\t\t\t\t\t\t$target.classList.toggle('is-active');\n\t\t\t\t\t});\n\t\t\t\t});\n\t\t\t});\n\t\t</script></nav>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

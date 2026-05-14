@@ -65,15 +65,14 @@ func (s *Service) CreateUser(username string, password string) (int, error) {
 	}
 	return s.repo.CreateUser(username, password)
 }
+
 func (s *Service) CheckPassword(username string, password string) (int, error) {
-	if len(password) < 6 {
-		return -1, errors.New("username or password is incorrect")
-	}
-	if len(password) > 64 {
+	if len(username) < 2 || len(username) > 24 || len(password) < 6 || len(password) > 64 {
 		return -1, errors.New("username or password is incorrect")
 	}
 	return s.repo.CheckPassword(username, password)
 }
+
 func (s *Service) ChangePassword(username string, old_password string, new_password string) error {
 	if len(new_password) < 6 {
 		return errors.New("New password must be at least 6 characters.")

@@ -5,37 +5,27 @@ import "fmt"
 
 templ ChatProfilePage(chat *types.Chat, chatUsers *[]types.User, requestingUserIsAdmin bool) {
 	@BasePage("Chat Profile") {
-		@ChatProfileNav(chat) {
-			<div class="box content">
-				<h1>Chat Info</h1>
-				@PartialChatNameDisplay(chat.Name, chat.PartialChatNameFormLink())
-
-				<h1>Chat Actions</h1>
-				@ChatDeleteForm(chat.ChatProfileDeleteLink())
-
-				<h1>Chat Users</h1>
-				@ChatUsers(chat.ID, chatUsers)
-
-				<h1>Add Users</h1>
-				if requestingUserIsAdmin {
-					<p>Can't find your friend? <a href="/user/invite">Invite them!</a></p>
-				}
-				@ChatUserAddSearch(chat.ID)
-			</div>
-		}
-	}
-}
-
-// Nav
-// ------------------------------------------------------------------------------------
-templ ChatProfileNav(chat *types.Chat) {
-	@BasePage("Chat Profile") {
 		<nav class="navbar is-fixed-top has-shadow" role="navigation">
 			<div class="navbar-brand">
 				<a class="navbar-item button" href={ chat.ChatLink() }>Back</a>
 			</div>
 		</nav>
-		{ children... }
+		<div class="box content">
+			<h1>Chat Info</h1>
+			@PartialChatNameDisplay(chat.Name, chat.PartialChatNameFormLink())
+
+			<h1>Chat Actions</h1>
+			@ChatDeleteForm(chat.ChatProfileDeleteLink())
+
+			<h1>Chat Users</h1>
+			@ChatUsers(chat.ID, chatUsers)
+
+			<h1>Add Users</h1>
+			if requestingUserIsAdmin {
+				<p>Can't find your friend? <a href="/user/invite">Invite them!</a></p>
+			}
+			@ChatUserAddSearch(chat.ID)
+		</div>
 	}
 }
 

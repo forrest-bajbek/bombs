@@ -55,7 +55,7 @@ func UserInvitePage(user *types.User) templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"box content\"><a class=\"button\" href=\"/\">Back</a><h1>Generate an invite link</h1><div class=\"field\"><label class=\"label\">Username</label><div class=\"control\"><input hx-post=\"/user/invite\" hx-target=\"#invite-link-div\" hx-trigger=\"input changed delay:500ms, keyup[key=='Enter']\" class=\"input\" type=\"text\" name=\"username\" placeholder=\"New Username\" id=\"username\"></div></div><div id=\"invite-link-div\"><!-- HTMX Target --></div></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"box content\"><a class=\"button\" href=\"/\">Back</a><h1>Generate an invite link</h1><div class=\"field\"><label class=\"label\">Username</label><div class=\"control\"><input hx-post=\"/user/invite\" hx-target=\"#invite-link-div\" hx-trigger=\"input changed delay:500ms, keyup[key=='Enter']\" class=\"input\" type=\"text\" name=\"username\" placeholder=\"New Username\" id=\"username\" minlength=\"2\" maxlength=\"24\" required></div></div><div id=\"invite-link-div\"><!-- HTMX Target --></div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -161,7 +161,7 @@ func PartialUserInviteLink(link string) templ.Component {
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(link)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/user.create.templ`, Line: 58, Col: 49}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/user.create.templ`, Line: 61, Col: 49}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
@@ -244,7 +244,7 @@ func UserCreatePage(username string, inviteToken string) templ.Component {
 				var templ_7745c5c3_Var12 string
 				templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(inviteToken)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/user.create.templ`, Line: 80, Col: 92}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/user.create.templ`, Line: 83, Col: 92}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 				if templ_7745c5c3_Err != nil {
@@ -257,7 +257,7 @@ func UserCreatePage(username string, inviteToken string) templ.Component {
 				var templ_7745c5c3_Var13 string
 				templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(username)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/user.create.templ`, Line: 81, Col: 81}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/user.create.templ`, Line: 84, Col: 81}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 				if templ_7745c5c3_Err != nil {
