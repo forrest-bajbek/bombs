@@ -102,13 +102,13 @@ func (h *Handler) MessageEvents(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
-	// w.Header().Set("Connection", "keep-alive")
-	w.Header().Set("Connection", "Keep-Alive")
+	w.Header().Set("Connection", "keep-alive")
 	w.Header().Set("X-Accel-Buffering", "no-cache")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	rc := http.NewResponseController(w)
+	ctx := r.Context()
 
 	// // send most recent messages from database
 	databaseMessages, err := h.service.GetMessagesByChatID(requestingUser.ID, chatID)
@@ -134,13 +134,16 @@ func (h *Handler) MessageEvents(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// retrieve context (used to check if client disconnects)
-	ctx := r.Context()
+	defer func() {
+		h.messageHub.UnregisterClient <- clientID
+	}()
 
 	for {
 		select {
+		case <-ctx.Done(): // client disconnected
+			h.messageHub.UnregisterClient <- clientID
+			return
 		case m := <-clientChannel: // new message
-			log.Printf("Got a message: %s", m.Text)
 			jsonData, err := json.Marshal(&m)
 			if err != nil {
 				log.Printf("Error marshaling JSON: %v", err)
@@ -154,11 +157,9 @@ func (h *Handler) MessageEvents(w http.ResponseWriter, r *http.Request) {
 			err = rc.Flush()
 			if err != nil {
 				log.Printf("Error flushing: %v", err)
+				h.messageHub.UnregisterClient <- clientID
 				return
 			}
-		case <-ctx.Done(): // client disconnected
-			h.messageHub.UnregisterClient <- clientID
-			return
 		}
 	}
 }
