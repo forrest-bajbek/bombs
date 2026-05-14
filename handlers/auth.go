@@ -9,26 +9,29 @@ import (
 )
 
 func (h *Handler) LoginPage(w http.ResponseWriter, r *http.Request) {
-	component := components.LoginPage()
+	component := components.LoginPage("", "", "")
 	component.Render(context.Background(), w)
 }
 
 func (h *Handler) LogIn(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
-		http.Error(w, err.Error(), 400)
+		component := components.LoginPage("", "", err.Error())
+		component.Render(context.Background(), w)
 		return
 	}
 	username := r.PostForm.Get("username")
 	password := r.PostForm.Get("password")
 	userID, err := h.service.CheckPassword(username, password)
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+		component := components.LoginPage(username, password, err.Error())
+		component.Render(context.Background(), w)
 		return
 	}
 	authToken, _, err := h.tokenMaker.CreateAuthToken(userID)
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+		component := components.LoginPage(username, password, err.Error())
+		component.Render(context.Background(), w)
 		return
 	}
 	cookie := &http.Cookie{
