@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/forrest-bajbek/bombs/components"
 	"github.com/forrest-bajbek/bombs/middlewares"
@@ -67,6 +68,16 @@ func (h *Handler) MessageCreate(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	// Handle Bombs
+	if strings.TrimSpace(m.Text) == "💣" {
+		err := h.service.BombChat(requestingUser.ID, chatID)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+
 	messageID, err := h.service.CreateMessage(requestingUser.ID, chatID, m.Text)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -154,12 +165,20 @@ func (h *Handler) MessageEvents(w http.ResponseWriter, r *http.Request) {
 				ChannelMessage: m,
 				IsSender:       m.UserID == requestingUser.ID,
 			}
+
+			var eventType string
+			if strings.TrimSpace(m.Text) == "💣" {
+				eventType = "bomb"
+			} else {
+				eventType = "newMessage"
+			}
+
 			jsonData, err := json.Marshal(&rm)
 			if err != nil {
 				log.Printf("Error marshaling JSON: %v", err)
 				return
 			}
-			_, err = fmt.Fprintf(w, "event:%s\nid: %d\ndata: %s\n\n", "newMessage", rm.MessageID, string(jsonData))
+			_, err = fmt.Fprintf(w, "event:%s\nid: %d\ndata: %s\n\n", eventType, rm.MessageID, string(jsonData))
 			if err != nil {
 				log.Print("Error sending event...")
 				return
