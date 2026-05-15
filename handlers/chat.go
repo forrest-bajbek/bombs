@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/forrest-bajbek/bombs/components"
 	"github.com/forrest-bajbek/bombs/middlewares"
@@ -76,6 +77,16 @@ func (h *Handler) MessageCreate(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		newMessage := &types.ChannelMessage{
+			MessageID:        -1,
+			MessageCreatedAt: time.Now(),
+			ChatID:           chatID,
+			UserID:           -1,
+			Username:         "bombs",
+			Text:             "💣",
+		}
+		h.messageHub.Broadcast <- *newMessage
+		return
 	}
 
 	messageID, err := h.service.CreateMessage(requestingUser.ID, chatID, m.Text)
