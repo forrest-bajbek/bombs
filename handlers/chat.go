@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -71,7 +72,8 @@ func (h *Handler) MessageCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Handle Bombs
-	if strings.TrimSpace(m.Text) == "💣" {
+	bombWords := []string{"💣", "bomb", "bombs"}
+	if slices.Contains(bombWords, strings.ToLower(strings.TrimSpace(m.Text))) {
 		err := h.service.BombChat(requestingUser.ID, chatID)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
