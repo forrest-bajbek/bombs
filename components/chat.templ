@@ -9,86 +9,174 @@ func linkToSSE(chatID int) string {
 	return fmt.Sprintf("/chat/%d/message/events", chatID)
 }
 
+func messageSendURL(chatID int) string {
+	return fmt.Sprintf("/chat/%d/message/create", chatID)
+}
+
 templ ChatPage(chat *types.Chat) {
 	@BasePage(chat.Name) {
-			<style>
-				.chat-container {
-						height: 100vh;
-						display: flex;
-						flex-direction: column;
-				}
+  <style>
+    /* ── Heights (change these to resize nav / input bar) ── */
+    :root {
+      --nav-height:  3.25rem;
+      --input-height: 4.5rem;
+    }
 
-				.messages-container {
-						flex-grow: 1;
-						overflow-y: auto;
-						padding: 20px;
-						background-color: #0F0F0F;
-				}
+    html, body {
+      height: 100%;
+      margin: 0;
+      overflow: hidden;          /* only the message area scrolls */
+    }
 
-				.message {
-						margin-bottom: 15px;
-						padding: 10px;
-						border-radius: 8px;
-						max-width: 70%;
-				}
+    /* ── Fixed navbar ── */
+    .chat-navbar {
+      position: fixed;
+      top:    0;
+      left:   0;
+      right:  0;
+      height: var(--nav-height);
+      z-index: 100;
+    }
 
-				.message-received {
-						background-color: #2D2D2D;
-						border: 1px solid #E1E1E1;
-						margin-right: auto;
-				}
+    /* ── Fixed message input bar ── */
+    .chat-input-bar {
+      position: fixed;
+      bottom: 0;
+      left:   0;
+      right:  0;
+      height: var(--input-height);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      padding: 0;
+      background: #0F0F0F;
+      border-top: 1px solid #0F0F0F;
+    }
 
-				.message-sent {
-						background-color: #2150E8;
-						border: 1px solid #E5EBFE;
-						margin-left: auto;
-				}
+		.chat-input-bar .field {
+			width: 100%;
+			padding: 0 0.75rem;
+		}
 
-				.message-input-container {
-						position: fixed;
-						bottom: 0;
-						left: 0;
-						right: 0;
-						padding: 15px;
-						background-color: #0F0F0F;
-						border-top: 1px solid #e5e5e5;
-				}
-			</style>
+    /* ── Scrollable messages area ── */
+    .chat-messages {
+      position: fixed;
+      top:    var(--nav-height);
+      bottom: var(--input-height);
+      left:   0;
+      right:  0;
+      overflow-y: auto;
+      padding: 1.5rem;
+      background: #0F0F0F;
+    }
 
-			<nav class="navbar is-fixed-top has-shadow" role="navigation">
+    /* ── Bulma message overrides for chat bubbles ── */
+    .chat-messages .message {
+      margin-bottom: 1rem;
+    }
+
+    .chat-messages .message.is-sent {
+      margin-left: 30%;
+    }
+
+    .chat-messages .message.is-received {
+      margin-right: 30%;
+    }
+
+    .chat-messages .message .message-body {
+      border-radius: 1rem;
+    }
+
+    .chat-messages .message.is-sent .message-body {
+      background-color: #2150E8;
+      color: #ffffff;
+    }
+
+    .chat-messages .message.is-received .message-body {
+      background-color: #2D2D2D;
+      color: #ffffff;
+    }
+
+    .chat-messages .message .message-header {
+      display: none;            /* hide default Bulma header */
+    }
+
+    .chat-messages .message .message-body .timestamp {
+      font-size: 0.7rem;
+      opacity: 0.7;
+      margin-top: 0.25rem;
+      text-align: left;
+    }
+
+    .chat-messages .message .message-body .username {
+      font-size: 0.7rem;
+      opacity: 0.7;
+      margin-top: 0.25rem;
+      text-align: left;
+    }
+
+  </style>
+
+			// Nav
+			<nav class="navbar chat-navbar">
 				<div class="navbar-brand">
 					<a class="navbar-item button" href="/">Back</a>
 					<a class="navbar-item" href={ chat.ChatProfileLink() }>{ chat.Name }</a>
 				</div>
 			</nav>
 
-			<!-- Messages -->
-			<div class="chat-container">
-				<div id="messageList" class="messages-container">
-				</div>
+			// Messages
+			<div class="chat-messages" id="chatMessages"></div>
 
-				<!-- Input Container -->
-				<div class="message-input-container">
-					@MessageForm(chat)
+			// Input Bar
+			<div class="chat-input-bar">
+				<div class="field has-addons is-fullwidth">
+					<div class="control is-expanded">
+						<input
+							class="input"
+							id="messageInput"
+							type="text"
+							placeholder="Type a message…"
+							autocomplete="off"
+							onkeydown="if (event.key === 'Enter') sendMessage()"
+						>
+					</div>
+					<div class="control">
+						<button class="button is-primary" id="sendBtn" onclick="sendMessage()">Send</button>
+					</div>
 				</div>
-
 			</div>
-			<script>
-				const messageFeed = new EventSource({{ linkToSSE(chat.ID) }});
-				const messageList = document.getElementById('messageList');
 
+			<script>
+				// Setup
+				// ----------------------------------------------------------------------------
+				const messageFeed = new EventSource({{ linkToSSE(chat.ID) }});
+				const messagesContainer = document.getElementById('chatMessages');
+				const messageInput = document.getElementById('messageInput');
+				const sendBtn = document.getElementById('sendBtn');
+
+				messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+				// Message Feed
+				// ----------------------------------------------------------------------------
 				messageFeed.addEventListener("newMessage", (event) => {
 					const m = JSON.parse(event.data);
 					const messageDiv = document.createElement('div');
-					messageDiv.className = m.is_sender ? "message message-sent" : "message message-received";
+					messageDiv.className = m.is_sender ? "message is-sent" : "message is-received";
 					messageDiv.innerHTML = `
-						<a href="/chat/${ m.chat_id }/message/${ m.id }">
-							<p><strong>${ m.username }@${ m.created_at }</strong></p>
-							<p>${ m.text }</p>
-						</a>
+						<div class="message-body">
+							<div class="username">@${ m.username }</div>
+							${ m.text }
+							<div class="timestamp">${ m.created_at }</div>
+						</div>
 					`;
-					messageList.append(messageDiv);
-					messageList.scrollTop = messageList.scrollHeight;
+					messagesContainer.append(messageDiv);
+
+					// Smooth scroll to the new message
+					messagesContainer.scrollTo({
+						top: messagesContainer.scrollHeight,
+						behavior: 'smooth'
+					});
 				});
 
 				messageFeed.onerror = (error) => {
@@ -106,65 +194,32 @@ templ ChatPage(chat *types.Chat) {
 				navigation.addEventListener("navigate", e => {
 						messageFeed.close();
 				});
+
+				// Message Form
+				// ----------------------------------------------------------------------------
+				async function sendMessage() {
+					const text = messageInput.value.trim();
+					if (!text) return;
+
+					sendBtn.disabled = true;
+					sendBtn.textContent = 'Sending...';
+
+					try {
+						result = await fetch({{ messageSendURL(chat.ID) }}, {
+							method: 'POST',
+							headers: { 'Content-Type': 'application/json' },
+							body: JSON.stringify({text})
+						});
+						messageInput.value = '';
+						messageInput.focus();
+					} catch (error) {
+						console.error('Failed to send message:', error);
+						window.location.reload();
+					} finally {
+						sendBtn.disabled = false;
+						sendBtn.textContent = 'Send';
+					}
+				};
 			</script>
 	}
-}
-
-func messageSendURL(chatID int) string {
-	return fmt.Sprintf("/chat/%d/message/create", chatID)
-}
-
-templ MessageForm(chat *types.Chat) {
-	<form hx-post={ chat.PartialChatMessageCreateLink() } hx-target="this" hx-swap="outerHTML">
-		<div class="field has-addons">
-			<div class="control is-expanded">
-				<input
-					id="messageInput"
-					class="input"
-					type="text"
-					name="text"
-					placeholder="Type your message here..."
-					autocomplete="off"
-					minlength="1"
-					maxlength="1024"
-					required
-				>
-			</div>
-			<div class="control">
-				<button id="sendBtn" class="button is-primary" type="submit">Send</button>
-				</div>
-		</div>
-	</form>
-	<script>
-		const messageInput = document.getElementById('messageInput');
-		const sendBtn = document.getElementById('sendBtn');
-		async function handleSend() {
-			const message = messageInput.value.trim();
-			if (!message) return;
-			sendBtn.disabled = true;
-			sendBtn.textContent = 'Sending...';
-			try {
-				await fetch({{ messageSendURL(chat.ID) }}, {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({message})
-				});
-				messageInput.value = '';
-				messageInput.focus();
-			} catch (error) {
-				console.error('Failed to send message:', error);
-				window.location.reload();
-			} finally {
-				sendBtn.disabled = false;
-				sendBtn.textContent = 'Send';
-			}
-		};
-		sendBtn.addEventListener('click', handleSend)
-		messageInput.addEventListener('keydown', (e) => {
-			if (e.key === 'Enter') {
-				e.preventDefault();
-				handleSend();
-			}
-		})
-	</script>
 }

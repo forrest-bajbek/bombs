@@ -11,12 +11,20 @@ type Message struct {
 	ChatID    int       `json:"chat_id"`
 	UserID    int       `json:"user_id"`
 	Text      string    `json:"text"`
-	IsSender  bool      `json:"is_sender"`
 }
 
-type MessageDetail struct {
-	Message
-	Username string `json:"username"`
+type ChannelMessage struct {
+	MessageID        int       `json:"message_id"`
+	MessageCreatedAt time.Time `json:"message_created_at"`
+	ChatID           int       `json:"chat_id"`
+	UserID           int       `json:"user_id"`
+	Username         string    `json:"username"`
+	Text             string    `json:"text"`
+}
+
+type ResponseMessage struct {
+	ChannelMessage
+	IsSender bool `json:"is_sender"`
 }
 
 type ChatPreview struct {

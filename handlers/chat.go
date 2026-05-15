@@ -53,15 +53,17 @@ func (h *Handler) MessageCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	chatID, err := strconv.Atoi(chat_id)
 	if err != nil {
+		log.Printf("error: %s", err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	type MessageRequest struct {
-		Text string `json:"message"`
+		Text string `json:"text"`
 	}
 	var m MessageRequest
 	err = json.NewDecoder(r.Body).Decode(&m)
 	if err != nil {
+		log.Printf("error: %s", err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -117,12 +119,16 @@ func (h *Handler) MessageEvents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	for _, m := range *databaseMessages {
-		jsonData, err := json.Marshal(&m)
+		rm := types.ResponseMessage{
+			ChannelMessage: m,
+			IsSender:       m.UserID == requestingUser.ID,
+		}
+		jsonData, err := json.Marshal(&rm)
 		if err != nil {
 			log.Printf("Error marshaling JSON: %v", err)
 			return
 		}
-		_, err = fmt.Fprintf(w, "event:%s\nid: %d\ndata: %s\n\n", "newMessage", m.ID, string(jsonData))
+		_, err = fmt.Fprintf(w, "event:%s\nid: %d\ndata: %s\n\n", "newMessage", rm.MessageID, string(jsonData))
 		if err != nil {
 			log.Printf("Error sending event...")
 			return
@@ -144,12 +150,16 @@ func (h *Handler) MessageEvents(w http.ResponseWriter, r *http.Request) {
 			h.messageHub.UnregisterClient <- clientID
 			return
 		case m := <-clientChannel: // new message
-			jsonData, err := json.Marshal(&m)
+			rm := types.ResponseMessage{
+				ChannelMessage: m,
+				IsSender:       m.UserID == requestingUser.ID,
+			}
+			jsonData, err := json.Marshal(&rm)
 			if err != nil {
 				log.Printf("Error marshaling JSON: %v", err)
 				return
 			}
-			_, err = fmt.Fprintf(w, "event:%s\nid: %d\ndata: %s\n\n", "newMessage", m.ID, string(jsonData))
+			_, err = fmt.Fprintf(w, "event:%s\nid: %d\ndata: %s\n\n", "newMessage", rm.MessageID, string(jsonData))
 			if err != nil {
 				log.Print("Error sending event...")
 				return
