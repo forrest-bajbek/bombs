@@ -380,6 +380,23 @@ func (r *Repo) DeleteChat(requestingUserID int, chatID int) error {
 	return nil
 }
 
+func (r *Repo) BombChat(requestingUserID int, chatID int) error {
+	user_in_chat, err := r.IsUserInChat(requestingUserID, chatID)
+	if err != nil {
+		return err
+	}
+	if !user_in_chat {
+		return errors.New("You can only bomb chats of which you are a member.")
+	}
+
+	_, err = r.db.Exec("DELETE FROM message WHERE chat_id = ?", chatID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (r *Repo) GetChatByID(requestingUserID int, chatID int) (*types.Chat, error) {
 	stmt := `
 		SELECT c.id, c.name

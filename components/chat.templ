@@ -159,6 +159,7 @@ templ ChatPage(chat *types.Chat) {
 
 				// Message Feed
 				// ----------------------------------------------------------------------------
+				// Handle messages
 				messageFeed.addEventListener("newMessage", (event) => {
 					const m = JSON.parse(event.data);
 					const messageDiv = document.createElement('div');
@@ -170,6 +171,28 @@ templ ChatPage(chat *types.Chat) {
 							<div class="timestamp">${ m.message_created_at }</div>
 						</div>
 					`;
+					messagesContainer.append(messageDiv);
+
+					// Smooth scroll to the new message
+					messagesContainer.scrollTo({
+						top: messagesContainer.scrollHeight,
+						behavior: 'smooth'
+					});
+				});
+
+				// Handle bombs
+				messageFeed.addEventListener("bomb", (event) => {
+					const m = JSON.parse(event.data);
+					const messageDiv = document.createElement('div');
+					messageDiv.className = m.is_sender ? "message is-sent" : "message is-received";
+					messageDiv.innerHTML = `
+						<div class="message-body">
+							<div class="username">@${ m.username }</div>
+							${ m.text }
+							<div class="timestamp">${ m.message_created_at }</div>
+						</div>
+					`;
+					messagesContainer.replaceChildren() // Remove all messages
 					messagesContainer.append(messageDiv);
 
 					// Smooth scroll to the new message

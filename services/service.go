@@ -22,6 +22,7 @@ type Repo interface {
 	UpdateChat(requestingUserID int, chatID int, chatName string) (*types.Chat, error)
 	IsUserInChat(userID int, chatID int) (bool, error)
 	DeleteChat(requestingUserID int, chatID int) error
+	BombChat(requestingUserID int, chatID int) error
 	GetChatByID(requestingUserID int, chatID int) (*types.Chat, error)
 	GetChat(requestingUserID int) (*[]types.Chat, error)
 	GetSuggestedUsers(requestingUserID int) (*[]types.User, error)
@@ -120,6 +121,9 @@ func (s *Service) IsUserInChat(userID int, chatID int) (bool, error) {
 }
 func (s *Service) DeleteChat(requestingUserID int, chatID int) error {
 	return s.repo.DeleteChat(requestingUserID, chatID)
+}
+func (s *Service) BombChat(requestingUserID int, chatID int) error {
+	return s.repo.BombChat(requestingUserID, chatID)
 }
 func (s *Service) GetChatByID(requestingUserID int, chatID int) (*types.Chat, error) {
 	return s.repo.GetChatByID(requestingUserID, chatID)
