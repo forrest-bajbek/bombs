@@ -16,6 +16,9 @@ type Encrypter struct {
 
 func NewEncrypter() *Encrypter {
 	key := os.Getenv("BOMBS_MESSAGE_ENCRYPTION_KEY")
+	if key == "" {
+		panic("Environment Variable BOMBS_MESSAGE_ENCRYPTION_KEY is required, and must be at least 32 characters long.")
+	}
 	if len(key) < 32 {
 		panic("BOMBS_MESSAGE_ENCRYPTION_KEY must be longer than 32 characters.")
 	}

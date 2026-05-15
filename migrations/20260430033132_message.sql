@@ -1,6 +1,6 @@
 -- +goose Up
--- ATTACH DATABASE 'file:memdb?mode=memory&cache=shared' AS memdb;
-CREATE TABLE message (
+ATTACH DATABASE 'file:memdb?mode=memory&cache=shared' AS memdb;
+CREATE TABLE memdb.message (
     id INTEGER PRIMARY KEY AUTOINCREMENT
     , created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
     , chat_id INTEGER NOT NULL
@@ -9,5 +9,5 @@ CREATE TABLE message (
 );
 
 -- +goose Down
-DROP TABLE message;
--- DETACH DATABASE memdb;
+-- DROP TABLE message;
+DETACH DATABASE memdb;
