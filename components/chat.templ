@@ -167,7 +167,7 @@ templ ChatPage(chat *types.Chat) {
 						<div class="message-body">
 							<div class="username">@${ m.username }</div>
 							${ m.text }
-							<div class="timestamp">${ m.created_at }</div>
+							<div class="timestamp">${ m.message_created_at }</div>
 						</div>
 					`;
 					messagesContainer.append(messageDiv);

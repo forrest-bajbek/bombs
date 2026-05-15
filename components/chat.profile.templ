@@ -11,15 +11,35 @@ templ ChatProfilePage(chat *types.Chat, chatUsers *[]types.User, requestingUserI
 			</div>
 		</nav>
 		<div class="box content">
+
+			// Chat Info ----------------------
 			<h1>Chat Info</h1>
 			@PartialChatNameDisplay(chat.Name, chat.PartialChatNameFormLink())
 
+			// Chat Actions ----------------------
 			<h1>Chat Actions</h1>
-			@ChatDeleteForm(chat.ChatProfileDeleteLink())
+			<form
+				action={ chat.ChatProfileDeleteLink() }
+				method="POST"
+				onsubmit="return confirm('Are you sure? This will delete the chat.');"
+			>
+				<button class="button is-danger">Delete Chat</button>
+			</form>
 
+			// Chat Users ----------------------
 			<h1>Chat Users</h1>
-			@ChatUsers(chat.ID, chatUsers)
+			<table class="table">
+				<tbody>
+					for _, user := range *chatUsers {
+						<tr>
+							<th>{ user.Username }</th>
+							<td>@PartialChatUserRemove(chat.ID, user.ID)</td>
+						</tr>
+					}
+				</tbody>
+			</table>
 
+			// Add Users ----------------------
 			<h1>Add Users</h1>
 			if requestingUserIsAdmin {
 				<p>Can't find your friend? <a href="/user/invite">Invite them!</a></p>
@@ -81,33 +101,8 @@ templ PartialChatNameForm(chatName string, linkToForm string, linkToDisplay stri
 	</form>
 }
 
-// Chat Actions
-// ------------------------------------------------------------------------------------
-templ ChatDeleteForm(link string) {
-	<form
-		action={ link }
-		method="POST"
-		onsubmit="return confirm('Are you sure? This will delete the chat.');"
-	>
-		<button class="button is-danger">Delete Chat</button>
-	</form>
-}
-
 // Chat Users
 // ------------------------------------------------------------------------------------
-templ ChatUsers(chatID int, users *[]types.User) {
-	<table class="table">
-		<tbody>
-			for _, user := range *users {
-				<tr>
-					<th>{ user.Username }</th>
-					<td>@PartialChatUserRemove(chatID, user.ID)</td>
-				</tr>
-			}
-		</tbody>
-	</table>
-}
-
 templ PartialChatUserRemove(chatID int, userID int) {
 	<form
 		hx-delete={ fmt.Sprintf("/partial/chat/%d/user/%d/remove", chatID, userID) }
