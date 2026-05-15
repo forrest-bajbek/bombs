@@ -1,0 +1,51 @@
+networks:
+  frontend:
+    name: 'frontend'
+    driver: bridge
+
+
+volumes:
+  bombs_data:
+    name: "bombs_data"
+  caddy_data:
+    name: "caddy_data"
+  caddy_config:
+    name: "caddy_config"
+
+services:
+  caddy:
+    image: caddy@sha256:86deaf5e3d3408a6ccec08fbb79989783dd26e206ae10bcf78a801dc8c9ab794  # caddy:2-alpine
+    container_name: bombs-proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp" # Optional: for HTTP/3
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+
+  bombs:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bombs-app
+    restart: unless-stopped
+    ports:
+      - 127.0.0.1:9000:9000
+    networks:
+      - frontend
+    volumes:
+      - bombs_data:/bombs/data
+    environment:
+      - BOMBS_ADMIN_USERNAME=${BOMBS_ADMIN_USERNAME} # optional, but must be submitted together with BOMBS_ADMIN_PASSWORD
+      - BOMBS_ADMIN_PASSWORD=${BOMBS_ADMIN_PASSWORD} # optional, but must be submitted together with BOMBS_ADMIN_USERNAME
+      - BOMBS_JWT_ENCRYPTION_KEY=${BOMBS_JWT_ENCRYPTION_KEY} # optional, recommended NOT to set this, will recalc every startup
+      - BOMBS_MESSAGE_ENCRYPTION_KEY=${BOMBS_MESSAGE_ENCRYPTION_KEY} # can generate with "openssl rand -hex 16 | head -c 32; echo"
+    healthcheck:
+      test: curl --fail http://localhost:9000/health || exit 1
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s

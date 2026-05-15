@@ -3,7 +3,9 @@ package main
 import (
 	"database/sql"
 	"embed"
+	"fmt"
 	"log"
+	"os"
 
 	"github.com/forrest-bajbek/bombs/handlers"
 	"github.com/forrest-bajbek/bombs/hub"
@@ -23,7 +25,15 @@ var embedMigrations embed.FS
 
 func main() {
 	// Database
-	db, err := sql.Open("sqlite3", "file:bombs.db")
+	BOMBS_DATA_FOLDER := os.Getenv("BOMBS_DATA_FOLDER")
+	if BOMBS_DATA_FOLDER == "" {
+		BOMBS_DATA_FOLDER = "/bombs/data"
+	}
+	if string(BOMBS_DATA_FOLDER[len(BOMBS_DATA_FOLDER)-1]) == "/" {
+		BOMBS_DATA_FOLDER = string(BOMBS_DATA_FOLDER[:len(BOMBS_DATA_FOLDER)-1])
+	}
+	sqlite_file := fmt.Sprintf("file:%s/bombs.db", BOMBS_DATA_FOLDER)
+	db, err := sql.Open("sqlite3", sqlite_file)
 	if err != nil {
 		panic(err)
 	}
@@ -38,23 +48,23 @@ func main() {
 		panic(err)
 	}
 
-	// // last migration is always the message table
-	// memdb_exists, err := sqlite.IsDatabaseAttached(db, "memdb")
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// if !memdb_exists {
-	// 	_, err := db.Exec("ATTACH DATABASE 'file:memdb?mode=memory&cache=shared' AS memdb")
-	// 	if err != nil {
-	// 		panic(err)
-	// 	}
-	// }
-	// if err := goose.Down(db, "migrations"); err != nil {
-	// 	panic(err)
-	// }
-	// if err := goose.Up(db, "migrations"); err != nil {
-	// 	panic(err)
-	// }
+	// last migration is always the message table
+	memdb_exists, err := sqlite.IsDatabaseAttached(db, "memdb")
+	if err != nil {
+		panic(err)
+	}
+	if !memdb_exists {
+		_, err := db.Exec("ATTACH DATABASE 'file:memdb?mode=memory&cache=shared' AS memdb")
+		if err != nil {
+			panic(err)
+		}
+	}
+	if err := goose.Down(db, "migrations"); err != nil {
+		panic(err)
+	}
+	if err := goose.Up(db, "migrations"); err != nil {
+		panic(err)
+	}
 
 	tokenMaker := token.NewJWTMaker()
 	encrypter := utils.NewEncrypter()
