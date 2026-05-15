@@ -2,7 +2,6 @@ package middlewares
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"time"
 
@@ -79,17 +78,17 @@ func IsAdmin(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, ok := r.Context().Value(AuthUser).(*types.User)
 		if !ok {
-			log.Printf("### Admin: Cannot retrieve user struct from request context")
+			// log.Printf("### Admin: Cannot retrieve user struct from request context")
 			writeUnauthed(w)
 			return
 		}
-		log.Printf("### Admin: Retrieved user %d struct from request context", user.ID)
+		// log.Printf("### Admin: Retrieved user %d struct from request context", user.ID)
 		if !user.IsAdmin {
-			log.Printf("### Admin: User %d is not an admin", user.ID)
+			// log.Printf("### Admin: User %d is not an admin", user.ID)
 			writeUnauthed(w)
 			return
 		}
-		log.Printf("### Admin: User %d is an admin", user.ID)
+		// log.Printf("### Admin: User %d is an admin", user.ID)
 		next.ServeHTTP(w, r)
 	})
 }

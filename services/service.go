@@ -35,8 +35,8 @@ type Repo interface {
 	GetChatIDsForChannels() ([]int, error)
 
 	CreateMessage(requestingUserID int, chatID int, text string) (int, error)
-	GetMessagesByChatID(requestingUserID int, chatID int) (*[]types.MessageDetail, error)
-	GetMessageByID(requestingUserID int, chatID int, messageID int) (*types.MessageDetail, error)
+	GetMessagesByChatID(requestingUserID int, chatID int) (*[]types.ChannelMessage, error)
+	GetMessageByID(requestingUserID int, chatID int, messageID int) (*types.ChannelMessage, error)
 	GetChatPreview(requestingUserID int) (*[]types.ChatPreview, error)
 	DeleteMessageByUserID(userID int) error
 }
@@ -170,10 +170,10 @@ func (s *Service) CreateMessage(requestingUserID int, chatID int, text string) (
 	}
 	return s.repo.CreateMessage(requestingUserID, chatID, text)
 }
-func (s *Service) GetMessagesByChatID(requestingUserID int, chatID int) (*[]types.MessageDetail, error) {
+func (s *Service) GetMessagesByChatID(requestingUserID int, chatID int) (*[]types.ChannelMessage, error) {
 	return s.repo.GetMessagesByChatID(requestingUserID, chatID)
 }
-func (s *Service) GetMessageByID(requestingUserID int, chatID int, messageID int) (*types.MessageDetail, error) {
+func (s *Service) GetMessageByID(requestingUserID int, chatID int, messageID int) (*types.ChannelMessage, error) {
 	return s.repo.GetMessageByID(requestingUserID, chatID, messageID)
 }
 func (s *Service) GetChatPreview(requestingUserID int) (*[]types.ChatPreview, error) {

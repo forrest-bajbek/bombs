@@ -8,30 +8,30 @@ import (
 )
 
 type MessageHub struct {
-	Broadcast        chan types.MessageDetail
+	Broadcast        chan types.ChannelMessage
 	UnregisterClient chan string
-	ClientChannels   map[string]chan types.MessageDetail
+	ClientChannels   map[string]chan types.ChannelMessage
 	ClientToChatMap  map[string]int
 	ClientMutex      sync.RWMutex
 }
 
 func NewMessageHub() *MessageHub {
 	return &MessageHub{
-		Broadcast:        make(chan types.MessageDetail),
+		Broadcast:        make(chan types.ChannelMessage),
 		UnregisterClient: make(chan string),
-		ClientChannels:   make(map[string]chan types.MessageDetail),
+		ClientChannels:   make(map[string]chan types.ChannelMessage),
 		ClientToChatMap:  make(map[string]int),
 		ClientMutex:      sync.RWMutex{},
 	}
 }
 
-func (h *MessageHub) CreateClientChannel(chatID int) (string, chan types.MessageDetail, error) {
+func (h *MessageHub) CreateClientChannel(chatID int) (string, chan types.ChannelMessage, error) {
 	h.ClientMutex.Lock()
 	defer h.ClientMutex.Unlock()
-	clientID := utils.GenerateRandomHexToken(64)    // Generate clientID
-	clientChannel := make(chan types.MessageDetail) // clientChannel
-	h.ClientChannels[clientID] = clientChannel      // add to ClientChannels
-	h.ClientToChatMap[clientID] = chatID            // map clientID to chatID
+	clientID := utils.GenerateRandomHexToken(64)     // Generate clientID
+	clientChannel := make(chan types.ChannelMessage) // clientChannel
+	h.ClientChannels[clientID] = clientChannel       // add to ClientChannels
+	h.ClientToChatMap[clientID] = chatID             // map clientID to chatID
 	return clientID, clientChannel, nil
 }
 

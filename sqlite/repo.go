@@ -729,7 +729,7 @@ func (r *Repo) CreateMessage(requestingUserID int, chatID int, text string) (int
 	return messageID, nil
 }
 
-func (r *Repo) GetMessagesByChatID(requestingUserID int, chatID int) (*[]types.MessageDetail, error) {
+func (r *Repo) GetMessagesByChatID(requestingUserID int, chatID int) (*[]types.ChannelMessage, error) {
 	user_in_chat, err := r.IsUserInChat(requestingUserID, chatID)
 	if err != nil {
 		return nil, err
@@ -741,13 +741,12 @@ func (r *Repo) GetMessagesByChatID(requestingUserID int, chatID int) (*[]types.M
 
 	stmt := `
 		SELECT
-			m.id
-			, m.created_at
+			m.id AS message_id
+			, m.created_at AS message_created_at
 			, c.id AS chat_id
 			, mu.id AS user_id
 			, mu.username
 			, m.encrypted_text
-			, mu.id = ru.id AS is_sender
 		FROM message m
 		INNER JOIN user mu
 			ON m.user_id = mu.id
@@ -768,18 +767,17 @@ func (r *Repo) GetMessagesByChatID(requestingUserID int, chatID int) (*[]types.M
 	}
 	defer rows.Close()
 
-	var messages []types.MessageDetail
+	var messages []types.ChannelMessage
 	for rows.Next() {
-		var m types.MessageDetail
+		var m types.ChannelMessage
 		var encryptedText []byte
 		err := rows.Scan(
-			&m.ID,
-			&m.CreatedAt,
+			&m.MessageID,
+			&m.MessageCreatedAt,
 			&m.ChatID,
 			&m.UserID,
 			&m.Username,
 			&encryptedText,
-			&m.IsSender,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan user row: %w", err)
@@ -793,12 +791,12 @@ func (r *Repo) GetMessagesByChatID(requestingUserID int, chatID int) (*[]types.M
 	}
 
 	if len(messages) == 0 {
-		return &[]types.MessageDetail{}, nil
+		return &[]types.ChannelMessage{}, nil
 	}
 	return &messages, nil
 }
 
-func (r *Repo) GetMessageByID(requestingUserID int, chatID int, messageID int) (*types.MessageDetail, error) {
+func (r *Repo) GetMessageByID(requestingUserID int, chatID int, messageID int) (*types.ChannelMessage, error) {
 	user_in_chat, err := r.IsUserInChat(requestingUserID, chatID)
 	if err != nil {
 		return nil, err
@@ -810,13 +808,12 @@ func (r *Repo) GetMessageByID(requestingUserID int, chatID int, messageID int) (
 
 	stmt := `
 		SELECT
-			m.id
-			, m.created_at
+			m.id AS message_id
+			, m.created_at AS message_created_at
 			, c.id AS chat_id
 			, mu.id AS user_id
 			, mu.username
 			, m.encrypted_text
-			, mu.id = ru.id AS is_sender
 		FROM message m
 		INNER JOIN user mu
 			ON m.user_id = mu.id
@@ -832,16 +829,15 @@ func (r *Repo) GetMessageByID(requestingUserID int, chatID int, messageID int) (
 			AND ru.id = ? -- requesting user is in the chat
 		ORDER BY m.id DESC
 	`
-	var m types.MessageDetail
+	var m types.ChannelMessage
 	var encryptedText []byte
 	err = r.db.QueryRow(stmt, chatID, messageID, requestingUserID).Scan(
-		&m.ID,
-		&m.CreatedAt,
+		&m.MessageID,
+		&m.MessageCreatedAt,
 		&m.ChatID,
 		&m.UserID,
 		&m.Username,
 		&encryptedText,
-		&m.IsSender,
 	)
 	if err != nil {
 		return &m, err
