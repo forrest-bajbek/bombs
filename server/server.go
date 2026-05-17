@@ -30,6 +30,9 @@ func NewServer(
 func (s *Server) ListenAndServe(addr string) error {
 	mux := http.NewServeMux()
 
+	// Health
+	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusOK) })
+
 	// Auth
 	// --------------------------------------------------------------------------------
 	mux.Handle("GET /login", http.HandlerFunc(s.handler.LoginPage))

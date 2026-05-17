@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/forrest-bajbek/bombs/components"
+	"github.com/forrest-bajbek/bombs/utils"
 )
 
 func (h *Handler) LoginPage(w http.ResponseWriter, r *http.Request) {
@@ -44,8 +45,8 @@ func (h *Handler) LogIn(w http.ResponseWriter, r *http.Request) {
 		Expires:  time.Now().Add(15 * time.Minute),
 		MaxAge:   int(time.Now().Add(15 * time.Minute).Unix()),
 		HttpOnly: true,
-		Secure:   r.TLS != nil, // Set only on HTTPS
-		SameSite: http.SameSiteLaxMode,
+		Secure:   utils.IsHTTPS(r),
+		SameSite: http.SameSiteStrictMode,
 	}
 	http.SetCookie(w, cookie)
 	http.Redirect(w, r, "/chat", http.StatusFound)

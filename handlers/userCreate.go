@@ -8,6 +8,7 @@ import (
 	"github.com/forrest-bajbek/bombs/components"
 	"github.com/forrest-bajbek/bombs/middlewares"
 	"github.com/forrest-bajbek/bombs/types"
+	"github.com/forrest-bajbek/bombs/utils"
 )
 
 func (h *Handler) UserInvitePage(w http.ResponseWriter, r *http.Request) {
@@ -47,7 +48,7 @@ func (h *Handler) UserInvitePartialLink(w http.ResponseWriter, r *http.Request) 
 		component.Render(context.Background(), w)
 		return
 	}
-	link := fmt.Sprintf("http://localhost:9000/user/create?inviteToken=%s", inviteToken)
+	link := fmt.Sprintf("%s/user/create?inviteToken=%s", utils.GetBaseURL(r), inviteToken)
 	component := components.PartialUserInviteLink(link)
 	component.Render(context.Background(), w)
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/forrest-bajbek/bombs/services"
 	"github.com/forrest-bajbek/bombs/token"
 	"github.com/forrest-bajbek/bombs/types"
+	"github.com/forrest-bajbek/bombs/utils"
 )
 
 const AuthUserID = "middleware.auth.userID"
@@ -62,8 +63,8 @@ func IsAuthenticated(service *services.Service, tokenMaker *token.JWTMaker, next
 			Path:     "/",
 			Expires:  time.Now().Add(15 * time.Minute),
 			HttpOnly: true,
-			Secure:   r.TLS != nil, // Set only on HTTPS
-			SameSite: http.SameSiteLaxMode,
+			Secure:   utils.IsHTTPS(r),
+			SameSite: http.SameSiteStrictMode,
 		}
 		http.SetCookie(w, cookie)
 
