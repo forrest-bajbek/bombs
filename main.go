@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/forrest-bajbek/bombs/handlers"
 	"github.com/forrest-bajbek/bombs/hub"
@@ -48,23 +49,32 @@ func main() {
 		panic(err)
 	}
 
-	// last migration is always the message table
-	memdb_exists, err := sqlite.IsDatabaseAttached(db, "memdb")
-	if err != nil {
-		panic(err)
-	}
-	if !memdb_exists {
-		_, err := db.Exec("ATTACH DATABASE 'file:memdb?mode=memory&cache=shared' AS memdb")
-		if err != nil {
-			panic(err)
+	// For some reason, the messages table keeps disappearing.
+	// So to fix, I'm going to check for existence every 5 seconds.
+	// Not the best solution, but gets the job done.
+	go func() {
+		// not sure if I need to defer db.Close() here...
+		for {
+			// last migration is always the message table
+			memdb_exists, err := sqlite.IsDatabaseAttached(db, "memdb")
+			if err != nil {
+				panic(err)
+			}
+			if !memdb_exists {
+				_, err := db.Exec("ATTACH DATABASE 'file:memdb?mode=memory&cache=shared' AS memdb")
+				if err != nil {
+					panic(err)
+				}
+			}
+			if err := goose.Down(db, "migrations"); err != nil {
+				panic(err)
+			}
+			if err := goose.Up(db, "migrations"); err != nil {
+				panic(err)
+			}
+			time.Sleep(5 * time.Second)
 		}
-	}
-	if err := goose.Down(db, "migrations"); err != nil {
-		panic(err)
-	}
-	if err := goose.Up(db, "migrations"); err != nil {
-		panic(err)
-	}
+	}()
 
 	tokenMaker := token.NewJWTMaker()
 	encrypter := utils.NewEncrypter()
