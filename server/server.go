@@ -7,6 +7,7 @@ import (
 	"github.com/forrest-bajbek/bombs/middlewares"
 	"github.com/forrest-bajbek/bombs/services"
 	"github.com/forrest-bajbek/bombs/token"
+	"github.com/go-chi/chi/v5"
 )
 
 type Server struct {
@@ -28,60 +29,78 @@ func NewServer(
 }
 
 func (s *Server) ListenAndServe(addr string) error {
-	mux := http.NewServeMux()
+	r := chi.NewRouter()
+
+	r.Use(middlewares.Logging)
+	r.Use(func(next http.Handler) http.Handler {
+		return middlewares.Session(next, s.tokenMaker)
+	})
 
 	// Health
-	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusOK) })
+	r.Get("/health", func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusOK) })
 
 	// Auth
 	// --------------------------------------------------------------------------------
-	mux.Handle("GET /login", http.HandlerFunc(s.handler.LoginPage))
-	mux.Handle("POST /login", http.HandlerFunc(s.handler.LogIn))
-	mux.Handle("POST /logout", http.HandlerFunc(s.handler.LogOut))
+	r.Get("/login", s.handler.LoginPage)
+	r.Post("/login", s.handler.LogIn)
+	r.Post("/logout", s.handler.LogOut)
 
-	// Home
+	// User Create
 	// --------------------------------------------------------------------------------
-	mux.Handle("GET /", middlewares.IsAuthenticated(s.service, s.tokenMaker, http.HandlerFunc(s.handler.HomePage)))
+	r.Get("/user/create", s.handler.UserCreatePage)
+	r.Post("/user/create", s.handler.UserCreate)
 
-	// User
+	// Authenticated routes
 	// --------------------------------------------------------------------------------
-	mux.Handle("GET /user/invite", middlewares.IsAuthenticated(s.service, s.tokenMaker, middlewares.IsAdmin(http.HandlerFunc(s.handler.UserInvitePage))))
-	mux.Handle("POST /user/invite", middlewares.IsAuthenticated(s.service, s.tokenMaker, middlewares.IsAdmin(http.HandlerFunc(s.handler.UserInvitePartialLink))))
-	mux.Handle("GET /user/create", http.HandlerFunc(s.handler.UserCreatePage))
-	mux.Handle("POST /user/create", http.HandlerFunc(s.handler.UserCreate))
+	r.Group(func(r chi.Router) {
+		r.Use(func(next http.Handler) http.Handler {
+			return middlewares.IsAuthenticated(s.service, s.tokenMaker, next)
+		})
 
-	mux.Handle("GET /user/profile", middlewares.IsAuthenticated(s.service, s.tokenMaker, http.HandlerFunc(s.handler.UserProfilePage)))
-	mux.Handle("GET /user/profile/delete", middlewares.IsAuthenticated(s.service, s.tokenMaker, http.HandlerFunc(s.handler.UserProfileDeletePage)))
-	mux.Handle("POST /user/profile/delete", middlewares.IsAuthenticated(s.service, s.tokenMaker, http.HandlerFunc(s.handler.UserProfileDelete)))
-	mux.Handle("POST /user/profile/partial/password", middlewares.IsAuthenticated(s.service, s.tokenMaker, http.HandlerFunc(s.handler.UserProfilePartialPassword)))
+		// Home
+		r.Get("/", s.handler.HomePage)
 
-	// Chat
-	// --------------------------------------------------------------------------------
-	mux.Handle("GET /chat/create", middlewares.IsAuthenticated(s.service, s.tokenMaker, http.HandlerFunc(s.handler.ChatCreatePage)))
-	mux.Handle("POST /chat/create", middlewares.IsAuthenticated(s.service, s.tokenMaker, http.HandlerFunc(s.handler.ChatCreate)))
+		// User
+		// ----------------------------------------------------------------------------
+		r.Group(func(r chi.Router) {
+			r.Use(middlewares.IsAdmin)
+			r.Get("/user/invite", s.handler.UserInvitePage)
+			r.Post("/user/invite", s.handler.UserInvitePartialLink)
+		})
 
-	mux.Handle("GET /chat/{chat_id}", middlewares.IsAuthenticated(s.service, s.tokenMaker, http.HandlerFunc(s.handler.ChatPage)))
-	mux.Handle("POST /chat/{chat_id}/message/create", middlewares.IsAuthenticated(s.service, s.tokenMaker, http.HandlerFunc(s.handler.MessageCreate)))
-	mux.Handle("GET /chat/{chat_id}/message/events", middlewares.IsAuthenticated(s.service, s.tokenMaker, http.HandlerFunc(s.handler.MessageEvents)))
+		r.Get("/user/profile", s.handler.UserProfilePage)
+		r.Get("/user/profile/delete", s.handler.UserProfileDeletePage)
+		r.Post("/user/profile/delete", s.handler.UserProfileDelete)
+		r.Post("/user/profile/partial/password", s.handler.UserProfilePartialPassword)
 
-	// Chat Profile
-	// --------------------------------------------------------------------------------
-	mux.Handle("GET /chat/{chat_id}/profile", middlewares.IsAuthenticated(s.service, s.tokenMaker, http.HandlerFunc(s.handler.ChatProfilePage)))
-	mux.Handle("POST /chat/{chat_id}/profile/delete", middlewares.IsAuthenticated(s.service, s.tokenMaker, http.HandlerFunc(s.handler.ChatProfileDelete)))
+		// Chat
+		// ----------------------------------------------------------------------------
+		r.Get("/chat/create", s.handler.ChatCreatePage)
+		r.Post("/chat/create", s.handler.ChatCreate)
 
-	// Edit Chat Name
-	mux.Handle("GET /partial/chat/{chat_id}/name/display", middlewares.IsAuthenticated(s.service, s.tokenMaker, http.HandlerFunc(s.handler.PartialChatNameDisplay)))
-	mux.Handle("GET /partial/chat/{chat_id}/name/form", middlewares.IsAuthenticated(s.service, s.tokenMaker, http.HandlerFunc(s.handler.PartialChatNameForm)))
-	mux.Handle("PUT /partial/chat/{chat_id}/name/form", middlewares.IsAuthenticated(s.service, s.tokenMaker, http.HandlerFunc(s.handler.PartialChatNameFormSubmit)))
+		r.Get("/chat/{chat_id}", s.handler.ChatPage)
+		r.Post("/chat/{chat_id}/message/create", s.handler.MessageCreate)
+		r.Get("/chat/{chat_id}/message/events", s.handler.MessageEvents)
 
-	// Chat User Remove
-	mux.Handle("DELETE /partial/chat/{chat_id}/user/{user_id}/remove", middlewares.IsAuthenticated(s.service, s.tokenMaker, http.HandlerFunc(s.handler.PartialChatUserRemove)))
-	mux.Handle("POST /partial/chat/{chat_id}/user/{user_id}/remove/undo", middlewares.IsAuthenticated(s.service, s.tokenMaker, http.HandlerFunc(s.handler.PartialChatUserRemoveUndo)))
+		// Chat Profile
+		// ----------------------------------------------------------------------------
+		r.Get("/chat/{chat_id}/profile", s.handler.ChatProfilePage)
+		r.Post("/chat/{chat_id}/profile/delete", s.handler.ChatProfileDelete)
 
-	// Chat User Add
-	mux.Handle("POST /partial/chat/{chat_id}/user/search", middlewares.IsAuthenticated(s.service, s.tokenMaker, http.HandlerFunc(s.handler.PartialChatUserAddSearchResult)))
-	mux.Handle("POST /partial/chat/{chat_id}/user/{user_id}/add", middlewares.IsAuthenticated(s.service, s.tokenMaker, http.HandlerFunc(s.handler.PartialChatUserAdd)))
-	mux.Handle("DELETE /partial/chat/{chat_id}/user/{user_id}/add/undo", middlewares.IsAuthenticated(s.service, s.tokenMaker, http.HandlerFunc(s.handler.PartialChatUserAddUndo)))
+		// Edit Chat Name
+		r.Get("/partial/chat/{chat_id}/name/display", s.handler.PartialChatNameDisplay)
+		r.Get("/partial/chat/{chat_id}/name/form", s.handler.PartialChatNameForm)
+		r.Put("/partial/chat/{chat_id}/name/form", s.handler.PartialChatNameFormSubmit)
 
-	return http.ListenAndServe(addr, middlewares.Logging(middlewares.Session(mux, s.tokenMaker)))
+		// Chat User Remove
+		r.Delete("/partial/chat/{chat_id}/user/{user_id}/remove", s.handler.PartialChatUserRemove)
+		r.Post("/partial/chat/{chat_id}/user/{user_id}/remove/undo", s.handler.PartialChatUserRemoveUndo)
+
+		// Chat User Add
+		r.Post("/partial/chat/{chat_id}/user/search", s.handler.PartialChatUserAddSearchResult)
+		r.Post("/partial/chat/{chat_id}/user/{user_id}/add", s.handler.PartialChatUserAdd)
+		r.Delete("/partial/chat/{chat_id}/user/{user_id}/add/undo", s.handler.PartialChatUserAddUndo)
+	})
+
+	return http.ListenAndServe(addr, r)
 }
