@@ -92,7 +92,7 @@ func LoginPage(username string, password string, errorMessage string) templ.Comp
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "></div></div><div class=\"field\"><label class=\"label\">Password</label><div class=\"control\"><input class=\"input\" type=\"password\" placeholder=\"password\" id=\"password\" name=\"password\" minlength=\"6\" maxlength=\"64\" required autocomplete=\"password\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "></div></div><div class=\"field\"><label class=\"label\">Password</label><div class=\"control\"><input class=\"input\" type=\"password\" placeholder=\"password\" id=\"password\" name=\"password\" minlength=\"5\" maxlength=\"64\" required autocomplete=\"password\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
