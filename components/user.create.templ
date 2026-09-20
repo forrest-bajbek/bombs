@@ -1,5 +1,6 @@
 package components
 
+import "github.com/forrest-bajbek/bombs/routes"
 import "github.com/forrest-bajbek/bombs/types"
 
 
@@ -7,13 +8,13 @@ templ UserInvitePage(user *types.User) {
 	@BasePage("Invite User") {
 		@BaseNav(user) {
 			<div class="box content">
-				<a class="button" href="/">Back</a>
+				<a class="button" href={ routes.URL(routes.Home) }>Back</a>
 				<h1>Generate an invite link</h1>
 				<div class="field">
 					<label class="label">Username</label>
 					<div class="control">
 						<input
-							hx-post="/user/invite"
+							hx-post={ routes.URL(routes.PartialUserInvite) }
 							hx-target="#invite-link-div"
 							hx-trigger="input changed delay:500ms, keyup[key=='Enter']"
 							class="input"
@@ -73,12 +74,12 @@ templ UserCreatePage(username string, inviteToken string, errorMessage string) {
 	@BasePage("Create User") {
 		<nav class="navbar is-fixed-top has-shadow" role="navigation">
 			<div class="navbar-brand">
-				<a class="navbar-item" href="/">B💣MBS</a>
+				<a class="navbar-item" href={ routes.URL(routes.Home) }>B💣MBS</a>
 			</div>
 		</nav>
 		<div class="box content">
 			<h1>Create Account</h1>
-			<form action="/user/create" method="POST">
+			<form action={ routes.URL(routes.UserCreate) } method="POST">
 				<input id="inviteToken" class="input" type="hidden" name="inviteToken" value={ inviteToken } readonly="true" />
 				<input id="username" class="input" type="text" name="username" value={ username } readonly="true" />
 				<input id="password" class="input" type="password" name="password" placeholder="password" />

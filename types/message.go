@@ -2,7 +2,10 @@ package types
 
 import (
 	"fmt"
+	"strconv"
 	"time"
+
+	"github.com/forrest-bajbek/bombs/routes"
 )
 
 type Message struct {
@@ -36,7 +39,7 @@ type ChatPreview struct {
 }
 
 func (c *ChatPreview) ChatURL() string {
-	return fmt.Sprintf("/chat/%d", c.ChatID)
+	return routes.URL(routes.ChatPage, strconv.Itoa(c.ChatID))
 }
 
 func (c *ChatPreview) LastMessageTextPreview() string {

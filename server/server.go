@@ -5,6 +5,7 @@ import (
 
 	"github.com/forrest-bajbek/bombs/handlers"
 	"github.com/forrest-bajbek/bombs/middlewares"
+	"github.com/forrest-bajbek/bombs/routes"
 	"github.com/forrest-bajbek/bombs/services"
 	"github.com/forrest-bajbek/bombs/token"
 	"github.com/go-chi/chi/v5"
@@ -29,6 +30,8 @@ func NewServer(
 }
 
 func (s *Server) ListenAndServe(addr string) error {
+	routes.Register()
+
 	r := chi.NewRouter()
 
 	r.Use(middlewares.Logging)
@@ -37,18 +40,18 @@ func (s *Server) ListenAndServe(addr string) error {
 	})
 
 	// Health
-	r.Get("/health", func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusOK) })
+	r.Get(routes.Pattern(routes.Health), func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusOK) })
 
 	// Auth
 	// --------------------------------------------------------------------------------
-	r.Get("/login", s.handler.LoginPage)
-	r.Post("/login", s.handler.LogIn)
-	r.Post("/logout", s.handler.LogOut)
+	r.Get(routes.Pattern(routes.LoginPage), s.handler.LoginPage)
+	r.Post(routes.Pattern(routes.Login), s.handler.LogIn)
+	r.Post(routes.Pattern(routes.Logout), s.handler.LogOut)
 
 	// User Create
 	// --------------------------------------------------------------------------------
-	r.Get("/user/create", s.handler.UserCreatePage)
-	r.Post("/user/create", s.handler.UserCreate)
+	r.Get(routes.Pattern(routes.UserCreatePage), s.handler.UserCreatePage)
+	r.Post(routes.Pattern(routes.UserCreate), s.handler.UserCreate)
 
 	// Authenticated routes
 	// --------------------------------------------------------------------------------
@@ -58,48 +61,48 @@ func (s *Server) ListenAndServe(addr string) error {
 		})
 
 		// Home
-		r.Get("/", s.handler.HomePage)
+		r.Get(routes.Pattern(routes.Home), s.handler.HomePage)
 
 		// User
 		// ----------------------------------------------------------------------------
 		r.Group(func(r chi.Router) {
 			r.Use(middlewares.IsAdmin)
-			r.Get("/user/invite", s.handler.UserInvitePage)
-			r.Post("/user/invite", s.handler.UserInvitePartialLink)
+			r.Get(routes.Pattern(routes.UserInvitePage), s.handler.UserInvitePage)
+			r.Post(routes.Pattern(routes.PartialUserInvite), s.handler.UserInvitePartialLink)
 		})
 
-		r.Get("/user/profile", s.handler.UserProfilePage)
-		r.Get("/user/profile/delete", s.handler.UserProfileDeletePage)
-		r.Post("/user/profile/delete", s.handler.UserProfileDelete)
-		r.Post("/user/profile/partial/password", s.handler.UserProfilePartialPassword)
+		r.Get(routes.Pattern(routes.UserProfilePage), s.handler.UserProfilePage)
+		r.Get(routes.Pattern(routes.UserProfileDeletePage), s.handler.UserProfileDeletePage)
+		r.Post(routes.Pattern(routes.UserProfileDelete), s.handler.UserProfileDelete)
+		r.Post(routes.Pattern(routes.PartialUserProfilePassword), s.handler.UserProfilePartialPassword)
 
 		// Chat
 		// ----------------------------------------------------------------------------
-		r.Get("/chat/create", s.handler.ChatCreatePage)
-		r.Post("/chat/create", s.handler.ChatCreate)
+		r.Get(routes.Pattern(routes.ChatCreatePage), s.handler.ChatCreatePage)
+		r.Post(routes.Pattern(routes.ChatCreate), s.handler.ChatCreate)
 
-		r.Get("/chat/{chat_id}", s.handler.ChatPage)
-		r.Post("/chat/{chat_id}/message/create", s.handler.MessageCreate)
-		r.Get("/chat/{chat_id}/message/events", s.handler.MessageEvents)
+		r.Get(routes.Pattern(routes.ChatPage), s.handler.ChatPage)
+		r.Post(routes.Pattern(routes.ChatMessageCreate), s.handler.MessageCreate)
+		r.Get(routes.Pattern(routes.ChatMessageEvents), s.handler.MessageEvents)
 
 		// Chat Profile
 		// ----------------------------------------------------------------------------
-		r.Get("/chat/{chat_id}/profile", s.handler.ChatProfilePage)
-		r.Post("/chat/{chat_id}/profile/delete", s.handler.ChatProfileDelete)
+		r.Get(routes.Pattern(routes.ChatProfilePage), s.handler.ChatProfilePage)
+		r.Post(routes.Pattern(routes.ChatProfileDelete), s.handler.ChatProfileDelete)
 
 		// Edit Chat Name
-		r.Get("/partial/chat/{chat_id}/name/display", s.handler.PartialChatNameDisplay)
-		r.Get("/partial/chat/{chat_id}/name/form", s.handler.PartialChatNameForm)
-		r.Put("/partial/chat/{chat_id}/name/form", s.handler.PartialChatNameFormSubmit)
+		r.Get(routes.Pattern(routes.PartialChatNameDisplay), s.handler.PartialChatNameDisplay)
+		r.Get(routes.Pattern(routes.PartialChatNameForm), s.handler.PartialChatNameForm)
+		r.Put(routes.Pattern(routes.PartialChatNameFormSubmit), s.handler.PartialChatNameFormSubmit)
 
 		// Chat User Remove
-		r.Delete("/partial/chat/{chat_id}/user/{user_id}/remove", s.handler.PartialChatUserRemove)
-		r.Post("/partial/chat/{chat_id}/user/{user_id}/remove/undo", s.handler.PartialChatUserRemoveUndo)
+		r.Delete(routes.Pattern(routes.PartialChatUserRemove), s.handler.PartialChatUserRemove)
+		r.Post(routes.Pattern(routes.PartialChatUserRemoveUndo), s.handler.PartialChatUserRemoveUndo)
 
 		// Chat User Add
-		r.Post("/partial/chat/{chat_id}/user/search", s.handler.PartialChatUserAddSearchResult)
-		r.Post("/partial/chat/{chat_id}/user/{user_id}/add", s.handler.PartialChatUserAdd)
-		r.Delete("/partial/chat/{chat_id}/user/{user_id}/add/undo", s.handler.PartialChatUserAddUndo)
+		r.Post(routes.Pattern(routes.PartialChatUserSearch), s.handler.PartialChatUserAddSearchResult)
+		r.Post(routes.Pattern(routes.PartialChatUserAdd), s.handler.PartialChatUserAdd)
+		r.Delete(routes.Pattern(routes.PartialChatUserAddUndo), s.handler.PartialChatUserAddUndo)
 	})
 
 	return http.ListenAndServe(addr, r)

@@ -13,13 +13,14 @@ import (
 
 	"github.com/forrest-bajbek/bombs/components"
 	"github.com/forrest-bajbek/bombs/middlewares"
+	"github.com/forrest-bajbek/bombs/routes"
 	"github.com/forrest-bajbek/bombs/types"
 )
 
 func (h *Handler) ChatPage(w http.ResponseWriter, r *http.Request) {
 	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
 	if !ok {
-		http.Redirect(w, r, "/login", http.StatusFound)
+		http.Redirect(w, r, routes.URL(routes.LoginPage), http.StatusFound)
 		return
 	}
 
@@ -46,7 +47,7 @@ func (h *Handler) ChatPage(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) MessageCreate(w http.ResponseWriter, r *http.Request) {
 	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
 	if !ok {
-		http.Redirect(w, r, "/login", http.StatusFound)
+		http.Redirect(w, r, routes.URL(routes.LoginPage), http.StatusFound)
 		return
 	}
 	chat_id := r.PathValue("chat_id")
@@ -107,7 +108,7 @@ func (h *Handler) MessageCreate(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) MessageEvents(w http.ResponseWriter, r *http.Request) {
 	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
 	if !ok {
-		http.Redirect(w, r, "/login", http.StatusFound)
+		http.Redirect(w, r, routes.URL(routes.LoginPage), http.StatusFound)
 	}
 	chat_id := r.PathValue("chat_id")
 	if chat_id == "" {

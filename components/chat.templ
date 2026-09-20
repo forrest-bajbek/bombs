@@ -1,16 +1,18 @@
 package components
 
 import (
+	"strconv"
+
+	"github.com/forrest-bajbek/bombs/routes"
 	"github.com/forrest-bajbek/bombs/types"
-	"fmt"
 )
 
 func linkToSSE(chatID int) string {
-	return fmt.Sprintf("/chat/%d/message/events", chatID)
+	return routes.URL(routes.ChatMessageEvents, strconv.Itoa(chatID))
 }
 
 func messageSendURL(chatID int) string {
-	return fmt.Sprintf("/chat/%d/message/create", chatID)
+	return routes.URL(routes.ChatMessageCreate, strconv.Itoa(chatID))
 }
 
 templ ChatPage(chat *types.Chat) {
@@ -120,7 +122,7 @@ templ ChatPage(chat *types.Chat) {
 			// Nav
 			<nav class="navbar chat-navbar">
 				<div class="navbar-brand">
-					<a class="navbar-item button" href="/">Back</a>
+					<a class="navbar-item button" href={ routes.URL(routes.Home) }>Back</a>
 					<a class="navbar-item" href={ chat.ChatProfileLink() }>{ chat.Name }</a>
 				</div>
 			</nav>

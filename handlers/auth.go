@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/forrest-bajbek/bombs/components"
+	"github.com/forrest-bajbek/bombs/routes"
 	"github.com/forrest-bajbek/bombs/utils"
 )
 
@@ -49,7 +50,7 @@ func (h *Handler) LogIn(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteStrictMode,
 	}
 	http.SetCookie(w, cookie)
-	http.Redirect(w, r, "/chat", http.StatusFound)
+	http.Redirect(w, r, routes.URL(routes.Home), http.StatusFound)
 }
 
 func (h *Handler) LogOut(w http.ResponseWriter, r *http.Request) {
@@ -62,5 +63,5 @@ func (h *Handler) LogOut(w http.ResponseWriter, r *http.Request) {
 		HttpOnly: true,
 	}
 	http.SetCookie(w, cookie)
-	http.Redirect(w, r, "/login", http.StatusFound)
+	http.Redirect(w, r, routes.URL(routes.LoginPage), http.StatusFound)
 }

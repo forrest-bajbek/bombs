@@ -1,7 +1,8 @@
 package components
 
+import "strconv"
+import "github.com/forrest-bajbek/bombs/routes"
 import "github.com/forrest-bajbek/bombs/types"
-import "fmt"
 
 templ ChatProfilePage(chat *types.Chat, chatUsers *[]types.User, requestingUserIsAdmin bool) {
 	@BasePage("Chat Profile") {
@@ -42,7 +43,7 @@ templ ChatProfilePage(chat *types.Chat, chatUsers *[]types.User, requestingUserI
 			// Add Users ----------------------
 			<h1>Add Users</h1>
 			if requestingUserIsAdmin {
-				<p>Can't find your friend? <a href="/user/invite">Invite them!</a></p>
+				<p>Can't find your friend? <a href={ routes.URL(routes.UserInvitePage) }>Invite them!</a></p>
 			}
 			<span class="htmx-indicator">Searching...</span>
 			<input
@@ -50,7 +51,7 @@ templ ChatProfilePage(chat *types.Chat, chatUsers *[]types.User, requestingUserI
 				type="search"
 				name="search_term"
 				placeholder="Begin Typing To Search Users..."
-				hx-post={ fmt.Sprintf("/partial/chat/%d/user/search", chat.ID) }
+				hx-post={ routes.URL(routes.PartialChatUserSearch, strconv.Itoa(chat.ID)) }
 				hx-trigger="input changed delay:500ms, keyup[key=='Enter']"
 				hx-target="#search-results"
 				hx-indicator=".htmx-indicator"
@@ -105,7 +106,7 @@ templ PartialChatNameForm(chatName string, linkToForm string, linkToDisplay stri
 // ------------------------------------------------------------------------------------
 templ PartialChatUserRemove(chatID int, userID int) {
 	<form
-		hx-delete={ fmt.Sprintf("/partial/chat/%d/user/%d/remove", chatID, userID) }
+		hx-delete={ routes.URL(routes.PartialChatUserRemove, strconv.Itoa(chatID), strconv.Itoa(userID)) }
 		hx-target="this"
 		hx-swap="outerHTML"
 	>
@@ -115,7 +116,7 @@ templ PartialChatUserRemove(chatID int, userID int) {
 
 templ PartialChatUserRemoveUndo(chatID int, userID int) {
 	<form
-		hx-post={ fmt.Sprintf("/partial/chat/%d/user/%d/remove/undo", chatID, userID) }
+		hx-post={ routes.URL(routes.PartialChatUserRemoveUndo, strconv.Itoa(chatID), strconv.Itoa(userID)) }
 		hx-target="this"
 		hx-swap="outerHTML"
 	>
@@ -147,7 +148,7 @@ templ PartialChatUserAddSearchResult(chatID int, users *[]types.User) {
 
 templ PartialChatUserAdd(chatID int, userID int) {
 	<form
-		hx-post={ fmt.Sprintf("/partial/chat/%d/user/%d/add", chatID, userID) }
+		hx-post={ routes.URL(routes.PartialChatUserAdd, strconv.Itoa(chatID), strconv.Itoa(userID)) }
 		hx-target="this"
 		hx-swap="outerHTML"
 	>
@@ -157,7 +158,7 @@ templ PartialChatUserAdd(chatID int, userID int) {
 
 templ PartialChatUserAddUndo(chatID int, userID int) {
 	<form
-		hx-delete={ fmt.Sprintf("/partial/chat/%d/user/%d/add/undo", chatID, userID) }
+		hx-delete={ routes.URL(routes.PartialChatUserAddUndo, strconv.Itoa(chatID), strconv.Itoa(userID)) }
 		hx-target="this"
 		hx-swap="outerHTML"
 	>

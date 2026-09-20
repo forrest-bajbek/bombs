@@ -7,6 +7,7 @@ import (
 
 	"github.com/forrest-bajbek/bombs/components"
 	"github.com/forrest-bajbek/bombs/middlewares"
+	"github.com/forrest-bajbek/bombs/routes"
 	"github.com/forrest-bajbek/bombs/types"
 	"github.com/forrest-bajbek/bombs/utils"
 )
@@ -14,7 +15,7 @@ import (
 func (h *Handler) UserInvitePage(w http.ResponseWriter, r *http.Request) {
 	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
 	if !ok {
-		http.Redirect(w, r, "/login", http.StatusFound)
+		http.Redirect(w, r, routes.URL(routes.LoginPage), http.StatusFound)
 		return
 	}
 	component := components.UserInvitePage(requestingUser)
@@ -48,7 +49,7 @@ func (h *Handler) UserInvitePartialLink(w http.ResponseWriter, r *http.Request) 
 		component.Render(context.Background(), w)
 		return
 	}
-	link := fmt.Sprintf("%s/user/create?inviteToken=%s", utils.GetBaseURL(r), inviteToken)
+	link := fmt.Sprintf("%s%s?inviteToken=%s", utils.GetBaseURL(r), routes.URL(routes.UserCreatePage), inviteToken)
 	component := components.PartialUserInviteLink(link)
 	component.Render(context.Background(), w)
 }
@@ -116,5 +117,5 @@ func (h *Handler) UserCreate(w http.ResponseWriter, r *http.Request) {
 		MaxAge: -1,
 	}
 	http.SetCookie(w, cookie)
-	http.Redirect(w, r, "/login", http.StatusFound)
+	http.Redirect(w, r, routes.URL(routes.LoginPage), http.StatusFound)
 }

@@ -6,13 +6,14 @@ import (
 
 	"github.com/forrest-bajbek/bombs/components"
 	"github.com/forrest-bajbek/bombs/middlewares"
+	"github.com/forrest-bajbek/bombs/routes"
 	"github.com/forrest-bajbek/bombs/types"
 )
 
 func (h *Handler) HomePage(w http.ResponseWriter, r *http.Request) {
 	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
 	if !ok {
-		http.Redirect(w, r, "/login", http.StatusFound)
+		http.Redirect(w, r, routes.URL(routes.LoginPage), http.StatusFound)
 		return
 	}
 

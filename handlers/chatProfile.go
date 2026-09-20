@@ -7,6 +7,7 @@ import (
 
 	"github.com/forrest-bajbek/bombs/components"
 	"github.com/forrest-bajbek/bombs/middlewares"
+	"github.com/forrest-bajbek/bombs/routes"
 	"github.com/forrest-bajbek/bombs/types"
 )
 
@@ -15,7 +16,7 @@ import (
 func (h *Handler) ChatProfilePage(w http.ResponseWriter, r *http.Request) {
 	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
 	if !ok {
-		http.Redirect(w, r, "/login", http.StatusFound)
+		http.Redirect(w, r, routes.URL(routes.LoginPage), http.StatusFound)
 	}
 
 	chat_id := r.PathValue("chat_id")
@@ -49,7 +50,7 @@ func (h *Handler) ChatProfilePage(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) PartialChatNameDisplay(w http.ResponseWriter, r *http.Request) {
 	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
 	if !ok {
-		http.Redirect(w, r, "/login", http.StatusFound)
+		http.Redirect(w, r, routes.URL(routes.LoginPage), http.StatusFound)
 		return
 	}
 
@@ -76,7 +77,7 @@ func (h *Handler) PartialChatNameDisplay(w http.ResponseWriter, r *http.Request)
 func (h *Handler) PartialChatNameForm(w http.ResponseWriter, r *http.Request) {
 	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
 	if !ok {
-		http.Redirect(w, r, "/login", http.StatusFound)
+		http.Redirect(w, r, routes.URL(routes.LoginPage), http.StatusFound)
 		return
 	}
 
@@ -103,7 +104,7 @@ func (h *Handler) PartialChatNameForm(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) PartialChatNameFormSubmit(w http.ResponseWriter, r *http.Request) {
 	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
 	if !ok {
-		http.Redirect(w, r, "/login", http.StatusFound)
+		http.Redirect(w, r, routes.URL(routes.LoginPage), http.StatusFound)
 		return
 	}
 
@@ -147,7 +148,7 @@ func (h *Handler) PartialChatNameFormSubmit(w http.ResponseWriter, r *http.Reque
 func (h *Handler) ChatProfileDelete(w http.ResponseWriter, r *http.Request) {
 	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
 	if !ok {
-		http.Redirect(w, r, "/login", http.StatusFound)
+		http.Redirect(w, r, routes.URL(routes.LoginPage), http.StatusFound)
 		return
 	}
 
@@ -168,7 +169,7 @@ func (h *Handler) ChatProfileDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, "/", http.StatusFound)
+	http.Redirect(w, r, routes.URL(routes.Home), http.StatusFound)
 }
 
 // Chat User Remove
@@ -176,7 +177,7 @@ func (h *Handler) ChatProfileDelete(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) PartialChatUserRemove(w http.ResponseWriter, r *http.Request) {
 	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
 	if !ok {
-		http.Redirect(w, r, "/login", http.StatusFound)
+		http.Redirect(w, r, routes.URL(routes.LoginPage), http.StatusFound)
 	}
 
 	chat_id := r.PathValue("chat_id")
@@ -213,7 +214,7 @@ func (h *Handler) PartialChatUserRemove(w http.ResponseWriter, r *http.Request) 
 func (h *Handler) PartialChatUserRemoveUndo(w http.ResponseWriter, r *http.Request) {
 	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
 	if !ok {
-		http.Redirect(w, r, "/login", http.StatusFound)
+		http.Redirect(w, r, routes.URL(routes.LoginPage), http.StatusFound)
 	}
 
 	chat_id := r.PathValue("chat_id")
@@ -252,7 +253,7 @@ func (h *Handler) PartialChatUserRemoveUndo(w http.ResponseWriter, r *http.Reque
 func (h *Handler) PartialChatUserAddSearchResult(w http.ResponseWriter, r *http.Request) {
 	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
 	if !ok {
-		http.Redirect(w, r, "/login", http.StatusFound)
+		http.Redirect(w, r, routes.URL(routes.LoginPage), http.StatusFound)
 	}
 
 	chat_id := r.PathValue("chat_id")
@@ -286,7 +287,7 @@ func (h *Handler) PartialChatUserAddSearchResult(w http.ResponseWriter, r *http.
 func (h *Handler) PartialChatUserAdd(w http.ResponseWriter, r *http.Request) {
 	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
 	if !ok {
-		http.Redirect(w, r, "/login", http.StatusFound)
+		http.Redirect(w, r, routes.URL(routes.LoginPage), http.StatusFound)
 	}
 
 	chat_id := r.PathValue("chat_id")
@@ -323,7 +324,7 @@ func (h *Handler) PartialChatUserAdd(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) PartialChatUserAddUndo(w http.ResponseWriter, r *http.Request) {
 	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
 	if !ok {
-		http.Redirect(w, r, "/login", http.StatusFound)
+		http.Redirect(w, r, routes.URL(routes.LoginPage), http.StatusFound)
 	}
 
 	chat_id := r.PathValue("chat_id")

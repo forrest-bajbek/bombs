@@ -2,18 +2,19 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/forrest-bajbek/bombs/components"
 	"github.com/forrest-bajbek/bombs/middlewares"
+	"github.com/forrest-bajbek/bombs/routes"
 	"github.com/forrest-bajbek/bombs/types"
 )
 
 func (h *Handler) ChatCreatePage(w http.ResponseWriter, r *http.Request) {
 	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
 	if !ok {
-		http.Redirect(w, r, "/login", http.StatusFound)
+		http.Redirect(w, r, routes.URL(routes.LoginPage), http.StatusFound)
 		return
 	}
 	component := components.ChatCreatePage(requestingUser, "", "")
@@ -23,7 +24,7 @@ func (h *Handler) ChatCreatePage(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) ChatCreate(w http.ResponseWriter, r *http.Request) {
 	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
 	if !ok {
-		http.Redirect(w, r, "/login", http.StatusFound)
+		http.Redirect(w, r, routes.URL(routes.LoginPage), http.StatusFound)
 		return
 	}
 
@@ -42,5 +43,5 @@ func (h *Handler) ChatCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, fmt.Sprintf("/chat/%d", chatID), http.StatusFound)
+	http.Redirect(w, r, routes.URL(routes.ChatPage, strconv.Itoa(chatID)), http.StatusFound)
 }
