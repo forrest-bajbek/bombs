@@ -12,25 +12,6 @@ import (
 	"github.com/forrest-bajbek/bombs/utils"
 )
 
-func IsDatabaseAttached(db *sql.DB, dbName string) (bool, error) {
-	rows, err := db.Query("PRAGMA database_list")
-	if err != nil {
-		return false, fmt.Errorf("failed to query database list: %w", err)
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var seq int
-		var name, file string
-		if err := rows.Scan(&seq, &name, &file); err != nil {
-			return false, fmt.Errorf("failed to scan database list: %w", err)
-		}
-		if name == dbName {
-			return true, nil
-		}
-	}
-	return false, rows.Err()
-}
-
 type Repo struct {
 	db        *sql.DB
 	encrypter *utils.Encrypter
@@ -101,6 +82,9 @@ func (r *Repo) GetUsers() (*[]types.User, error) {
 	if err != nil {
 		return nil, err
 	}
+	if rows.Err() != nil {
+		return nil, rows.Err()
+	}
 	defer rows.Close()
 
 	var users = []types.User{}
@@ -129,6 +113,9 @@ func (r *Repo) SearchUsers(username string) (*[]types.User, error) {
 	rows, err := r.db.Query(stmt, strings.ToLower(username))
 	if err != nil {
 		return nil, err
+	}
+	if rows.Err() != nil {
+		return nil, rows.Err()
 	}
 	defer rows.Close()
 
@@ -206,6 +193,9 @@ func (r *Repo) EnsureAdmin() error {
 	rows, err := r.db.Query("SELECT username FROM user WHERE is_admin")
 	if err != nil {
 		log.Fatal(err)
+	}
+	if rows.Err() != nil {
+		return rows.Err()
 	}
 	defer rows.Close()
 
@@ -433,6 +423,9 @@ func (r *Repo) GetChat(requestingUserID int) (*[]types.Chat, error) {
 	if err != nil {
 		return nil, err
 	}
+	if rows.Err() != nil {
+		return nil, rows.Err()
+	}
 	defer rows.Close()
 
 	var chats []types.Chat
@@ -463,6 +456,9 @@ func (r *Repo) SearchChatByName(requestingUserID int, chatName string) (*[]types
 	rows, err := r.db.Query(stmt, strings.ToLower(chatName), requestingUserID)
 	if err != nil {
 		return nil, err
+	}
+	if rows.Err() != nil {
+		return nil, rows.Err()
 	}
 	defer rows.Close()
 
@@ -536,6 +532,9 @@ func (r *Repo) GetChatUser(requestingUserID int, chatID int) (*[]types.User, err
 	rows, err := r.db.Query(stmt, chatID, requestingUserID)
 	if err != nil {
 		return nil, err
+	}
+	if rows.Err() != nil {
+		return nil, rows.Err()
 	}
 	defer rows.Close()
 
@@ -613,6 +612,9 @@ func (r *Repo) GetSuggestedUsers(requestingUserID int) (*[]types.User, error) {
 	if err != nil {
 		return nil, err
 	}
+	if rows.Err() != nil {
+		return nil, rows.Err()
+	}
 	defer rows.Close()
 
 	var users []types.User
@@ -680,6 +682,9 @@ func (r *Repo) SearchForNewUsers(requestingUserID int, chatID int, search_term s
 	if err != nil {
 		return nil, err
 	}
+	if rows.Err() != nil {
+		return nil, rows.Err()
+	}
 	defer rows.Close()
 
 	var users []types.User
@@ -699,6 +704,9 @@ func (r *Repo) GetChatIDsForChannels() ([]int, error) {
 	rows, err := r.db.Query("SELECT id FROM chat ORDER BY id")
 	if err != nil {
 		return nil, err
+	}
+	if rows.Err() != nil {
+		return nil, rows.Err()
 	}
 	defer rows.Close()
 
@@ -781,6 +789,9 @@ func (r *Repo) GetMessagesByChatID(requestingUserID int, chatID int) (*[]types.C
 	rows, err := r.db.Query(stmt, chatID, requestingUserID)
 	if err != nil {
 		return nil, err
+	}
+	if rows.Err() != nil {
+		return nil, rows.Err()
 	}
 	defer rows.Close()
 

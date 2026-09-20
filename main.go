@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"time"
 
 	"github.com/forrest-bajbek/bombs/handlers"
 	"github.com/forrest-bajbek/bombs/hub"
@@ -40,6 +39,24 @@ func main() {
 	}
 	defer db.Close()
 
+	// The message table lives in an attached in-memory database, which only
+	// persists for as long as at least one connection keeps it attached.
+	// Pinning the pool to a single, never-recycled connection guarantees
+	// that connection - and therefore the in-memory database - is never
+	// closed.
+	db.SetMaxOpenConns(1)
+	db.SetMaxIdleConns(1)
+	db.SetConnMaxLifetime(0)
+	db.SetConnMaxIdleTime(0)
+
+	// The in-memory database above doesn't survive a process restart, so it
+	// must be (re)created unconditionally on every boot, on this same
+	// pinned connection - see EnsureMemDB for why this can't be a normal
+	// goose migration.
+	if err := sqlite.EnsureMemDB(db); err != nil {
+		panic(err)
+	}
+
 	// Database Migrations
 	goose.SetBaseFS(embedMigrations)
 	if err := goose.SetDialect("sqlite3"); err != nil {
@@ -48,33 +65,6 @@ func main() {
 	if err := goose.Up(db, "migrations"); err != nil {
 		panic(err)
 	}
-
-	// For some reason, the messages table keeps disappearing.
-	// So to fix, I'm going to check for existence every 5 seconds.
-	// Not the best solution, but gets the job done.
-	go func() {
-		// not sure if I need to defer db.Close() here...
-		for {
-			// last migration is always the message table
-			memdb_exists, err := sqlite.IsDatabaseAttached(db, "memdb")
-			if err != nil {
-				panic(err)
-			}
-			if !memdb_exists {
-				_, err := db.Exec("ATTACH DATABASE 'file:memdb?mode=memory&cache=shared' AS memdb")
-				if err != nil {
-					panic(err)
-				}
-			}
-			if err := goose.Down(db, "migrations"); err != nil {
-				panic(err)
-			}
-			if err := goose.Up(db, "migrations"); err != nil {
-				panic(err)
-			}
-			time.Sleep(5 * time.Second)
-		}
-	}()
 
 	tokenMaker := token.NewJWTMaker()
 	encrypter := utils.NewEncrypter()
