@@ -348,6 +348,10 @@ func (r *Repo) DeleteChat(requestingUserID int, chatID int) error {
 	}
 	defer tx.Rollback()
 
+	if err := deleteChatFilesTx(tx, chatID); err != nil {
+		return err
+	}
+
 	_, err = tx.Exec("DELETE FROM message WHERE chat_id = ?", chatID)
 	if err != nil {
 		return err
@@ -379,12 +383,37 @@ func (r *Repo) BombChat(requestingUserID int, chatID int) error {
 		return errors.New("You can only bomb chats of which you are a member.")
 	}
 
-	_, err = r.db.Exec("DELETE FROM message WHERE chat_id = ?", chatID)
+	tx, err := r.db.Begin()
 	if err != nil {
 		return err
 	}
+	defer tx.Rollback()
 
-	return nil
+	if err := deleteChatFilesTx(tx, chatID); err != nil {
+		return err
+	}
+
+	if _, err := tx.Exec("DELETE FROM message WHERE chat_id = ?", chatID); err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
+// deleteChatFilesTx removes every attachment belonging to a chat. The join
+// rows go first so that no message_file row can ever outlive the file it
+// points at. Attachments live in the in-memory database, which is only
+// reclaimed on process restart, so any path that deletes messages has to
+// delete their files too or the memory is gone for good.
+func deleteChatFilesTx(tx *sql.Tx, chatID int) error {
+	if _, err := tx.Exec(
+		"DELETE FROM message_file WHERE file_id IN (SELECT id FROM file WHERE chat_id = ?)",
+		chatID,
+	); err != nil {
+		return err
+	}
+	_, err := tx.Exec("DELETE FROM file WHERE chat_id = ?", chatID)
+	return err
 }
 
 func (r *Repo) GetChatByID(requestingUserID int, chatID int) (*types.Chat, error) {
@@ -727,7 +756,7 @@ func (r *Repo) GetChatIDsForChannels() ([]int, error) {
 	return chatIDs, nil
 }
 
-func (r *Repo) CreateMessage(requestingUserID int, chatID int, text string) (int, error) {
+func (r *Repo) CreateMessage(requestingUserID int, chatID int, text string, files []types.NewFile) (int, error) {
 	user_in_chat, err := r.IsUserInChat(requestingUserID, chatID)
 	if err != nil {
 		return -1, err
@@ -737,21 +766,156 @@ func (r *Repo) CreateMessage(requestingUserID int, chatID int, text string) (int
 		return -1, err
 	}
 
-	// Encrypt text
+	// Encrypt everything before opening the transaction. The pool is
+	// pinned to a single connection (see main.go), so a transaction holds
+	// the only connection the app has - running AES over several
+	// megabytes of photos inside it would stall every other request,
+	// including live message streams.
 	encryptedText, err := r.encrypter.Encrypt(text)
 	if err != nil {
 		return -1, err
 	}
+	encryptedFiles := make([][]byte, len(files))
+	for i, f := range files {
+		encrypted, err := r.encrypter.Encrypt(string(f.Content))
+		if err != nil {
+			return -1, err
+		}
+		encryptedFiles[i] = encrypted
+	}
 
-	// Create Chat
+	tx, err := r.db.Begin()
+	if err != nil {
+		return -1, err
+	}
+	defer tx.Rollback()
+
 	var messageID int
 	stmt := "INSERT INTO message (chat_id, user_id, encrypted_text) VALUES (?, ?, ?) RETURNING id"
-	err = r.db.QueryRow(stmt, chatID, requestingUserID, encryptedText).Scan(&messageID)
-	if err != nil {
+	if err := tx.QueryRow(stmt, chatID, requestingUserID, encryptedText).Scan(&messageID); err != nil {
+		return -1, err
+	}
+
+	for i, f := range files {
+		var fileID int
+		stmt := `
+			INSERT INTO file (chat_id, user_id, mime_type, size_bytes, encrypted_content)
+			VALUES (?, ?, ?, ?, ?)
+			RETURNING id
+		`
+		if err := tx.QueryRow(
+			stmt, chatID, requestingUserID, f.MimeType, len(f.Content), encryptedFiles[i],
+		).Scan(&fileID); err != nil {
+			return -1, err
+		}
+
+		stmt = "INSERT INTO message_file (message_id, file_id, position) VALUES (?, ?, ?)"
+		if _, err := tx.Exec(stmt, messageID, fileID, i); err != nil {
+			return -1, err
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
 		return -1, err
 	}
 
 	return messageID, nil
+}
+
+// StorageUsedBytes reports the total plaintext size of every stored
+// attachment, for the budget check in the service layer.
+func (r *Repo) StorageUsedBytes() (int64, error) {
+	var total int64
+	err := r.db.QueryRow("SELECT COALESCE(SUM(size_bytes), 0) FROM file").Scan(&total)
+	return total, err
+}
+
+// getMessageFiles loads attachment metadata for a chat, or for one message
+// when messageID is non-zero.
+//
+// encrypted_content is deliberately absent from the select list: this runs
+// over whole pages of history, and pulling the blobs would mean decrypting
+// megabytes of photos just to render a grid of thumbnails. The bytes are
+// fetched one at a time by GetFile instead.
+func (r *Repo) getMessageFiles(chatID int, messageID int) (map[int][]types.MessageFile, error) {
+	stmt := `
+		SELECT
+			mf.message_id
+			, f.id
+			, f.chat_id
+			, f.mime_type
+			, mf.position
+		FROM message_file mf
+		INNER JOIN file f
+			ON mf.file_id = f.id
+		INNER JOIN message m
+			ON mf.message_id = m.id
+		WHERE
+			m.chat_id = ?
+			AND (? = 0 OR mf.message_id = ?)
+		ORDER BY mf.message_id, mf.position, mf.id
+	`
+	rows, err := r.db.Query(stmt, chatID, messageID, messageID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	filesByMessage := map[int][]types.MessageFile{}
+	for rows.Next() {
+		var mID int
+		var f types.MessageFile
+		if err := rows.Scan(&mID, &f.FileID, &f.ChatID, &f.MimeType, &f.Position); err != nil {
+			return nil, fmt.Errorf("failed to scan message_file row: %w", err)
+		}
+		filesByMessage[mID] = append(filesByMessage[mID], f)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return filesByMessage, nil
+}
+
+// GetFile returns one attachment's decrypted bytes.
+//
+// The join against chat_user is the authorization check: it establishes in
+// a single query both that the file belongs to the chat named in the URL
+// and that the requesting user is a member of that chat. A miss returns
+// sql.ErrNoRows so the handler can answer 404 rather than 403, which keeps
+// file ids from being enumerable.
+func (r *Repo) GetFile(requestingUserID int, chatID int, fileID int) (*types.File, error) {
+	stmt := `
+		SELECT
+			f.id
+			, f.created_at
+			, f.mime_type
+			, f.encrypted_content
+		FROM file f
+		INNER JOIN chat_user cu
+			ON f.chat_id = cu.chat_id
+		WHERE
+			f.id = ?
+			AND f.chat_id = ?
+			AND cu.user_id = ?
+	`
+	var file types.File
+	var encryptedContent []byte
+	if err := r.db.QueryRow(stmt, fileID, chatID, requestingUserID).Scan(
+		&file.ID,
+		&file.CreatedAt,
+		&file.MimeType,
+		&encryptedContent,
+	); err != nil {
+		return nil, err
+	}
+
+	content, err := r.encrypter.Decrypt(encryptedContent)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decrypt file %d: %w", fileID, err)
+	}
+	file.Content = []byte(content)
+
+	return &file, nil
 }
 
 func (r *Repo) GetMessagesByChatID(requestingUserID int, chatID int) (*[]types.ChannelMessage, error) {
@@ -821,6 +985,15 @@ func (r *Repo) GetMessagesByChatID(requestingUserID int, chatID int) (*[]types.C
 	if len(messages) == 0 {
 		return &[]types.ChannelMessage{}, nil
 	}
+
+	filesByMessage, err := r.getMessageFiles(chatID, 0)
+	if err != nil {
+		return nil, err
+	}
+	for i := range messages {
+		messages[i].Files = filesByMessage[messages[i].MessageID]
+	}
+
 	return &messages, nil
 }
 
@@ -875,6 +1048,12 @@ func (r *Repo) GetMessageByID(requestingUserID int, chatID int, messageID int) (
 		return nil, fmt.Errorf("failed to decrypt message: %w", err)
 	}
 	m.Text = text
+
+	filesByMessage, err := r.getMessageFiles(chatID, messageID)
+	if err != nil {
+		return nil, err
+	}
+	m.Files = filesByMessage[messageID]
 
 	return &m, nil
 }
@@ -951,8 +1130,27 @@ func (r *Repo) GetChatPreview(requestingUserID int) (*[]types.ChatPreview, error
 }
 
 func (r *Repo) DeleteMessageByUserID(userID int) error {
-	if _, err := r.db.Exec("DELETE FROM message WHERE user_id = ?", userID); err != nil {
+	tx, err := r.db.Begin()
+	if err != nil {
 		return err
 	}
-	return nil
+	defer tx.Rollback()
+
+	// file.user_id is the uploader, and a file is only ever attached to
+	// its uploader's own message, so scoping by user_id covers exactly the
+	// files whose messages are about to be deleted.
+	if _, err := tx.Exec(
+		"DELETE FROM message_file WHERE file_id IN (SELECT id FROM file WHERE user_id = ?)",
+		userID,
+	); err != nil {
+		return err
+	}
+	if _, err := tx.Exec("DELETE FROM file WHERE user_id = ?", userID); err != nil {
+		return err
+	}
+	if _, err := tx.Exec("DELETE FROM message WHERE user_id = ?", userID); err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }

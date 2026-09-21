@@ -2,6 +2,8 @@ package services
 
 import (
 	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/forrest-bajbek/bombs/types"
 )
@@ -35,7 +37,9 @@ type Repo interface {
 	SearchForNewUsers(requestingUserID int, chatID int, search_term string) (*[]types.User, error)
 	GetChatIDsForChannels() ([]int, error)
 
-	CreateMessage(requestingUserID int, chatID int, text string) (int, error)
+	CreateMessage(requestingUserID int, chatID int, text string, files []types.NewFile) (int, error)
+	GetFile(requestingUserID int, chatID int, fileID int) (*types.File, error)
+	StorageUsedBytes() (int64, error)
 	GetMessagesByChatID(requestingUserID int, chatID int) (*[]types.ChannelMessage, error)
 	GetMessageByID(requestingUserID int, chatID int, messageID int) (*types.ChannelMessage, error)
 	GetChatPreview(requestingUserID int) (*[]types.ChatPreview, error)
@@ -165,14 +169,51 @@ func (s *Service) GetChatIDsForChannels() ([]int, error) {
 }
 
 // Message
-func (s *Service) CreateMessage(requestingUserID int, chatID int, text string) (int, error) {
-	if len(text) < 1 {
-		return -1, errors.New("Message must be at least 1 character.")
+func (s *Service) CreateMessage(requestingUserID int, chatID int, text string, files []types.NewFile) (int, error) {
+	// A message needs to carry something, but photos count - a
+	// photo-only message with no caption is valid.
+	if strings.TrimSpace(text) == "" && len(files) == 0 {
+		return -1, errors.New("Message must contain text or at least one photo.")
 	}
 	if len(text) > 1024 {
 		return -1, errors.New("Message must be less than 1024 characters.")
 	}
-	return s.repo.CreateMessage(requestingUserID, chatID, text)
+	if len(files) > types.MaxFilesPerMessage {
+		return -1, fmt.Errorf("You can attach at most %d photos.", types.MaxFilesPerMessage)
+	}
+
+	var uploadBytes int64
+	for _, f := range files {
+		if len(f.Content) == 0 {
+			return -1, errors.New("Empty file.")
+		}
+		if len(f.Content) > types.MaxFileBytes {
+			return -1, fmt.Errorf("Photos must be smaller than %dMB.", types.MaxFileBytes>>20)
+		}
+		if !types.AllowedImageMimeTypes[f.MimeType] {
+			return -1, errors.New("Only JPEG, PNG, GIF and WebP images are allowed.")
+		}
+		uploadBytes += int64(len(f.Content))
+	}
+
+	// Attachments live in the in-memory database for the life of the
+	// process, so refuse politely near the ceiling instead of letting
+	// SQLite run out of memory and take every other query down with it.
+	if uploadBytes > 0 {
+		used, err := s.repo.StorageUsedBytes()
+		if err != nil {
+			return -1, err
+		}
+		if used+uploadBytes > types.StorageBudgetBytes {
+			return -1, errors.New("Photo storage is full. Bomb a chat to free space.")
+		}
+	}
+
+	return s.repo.CreateMessage(requestingUserID, chatID, text, files)
+}
+
+func (s *Service) GetFile(requestingUserID int, chatID int, fileID int) (*types.File, error) {
+	return s.repo.GetFile(requestingUserID, chatID, fileID)
 }
 func (s *Service) GetMessagesByChatID(requestingUserID int, chatID int) (*[]types.ChannelMessage, error) {
 	return s.repo.GetMessagesByChatID(requestingUserID, chatID)

@@ -1,0 +1,187 @@
+package components
+
+import (
+	"fmt"
+	"strconv"
+
+	"github.com/forrest-bajbek/bombs/routes"
+	"github.com/forrest-bajbek/bombs/types"
+)
+
+func messageFilesURL(chatID int, messageID int) string {
+	return routes.URL(routes.PartialChatMessageFiles, strconv.Itoa(chatID), strconv.Itoa(messageID))
+}
+
+func modalCloseURL(chatID int) string {
+	return routes.URL(routes.PartialChatModalClose, strconv.Itoa(chatID))
+}
+
+func bubbleClass(isSender bool) string {
+	if isSender {
+		return "message is-sent"
+	}
+	return "message is-received"
+}
+
+// attachmentGridClass drives the CSS grid layout. Anything past four
+// photos collapses to the same two-column grid, with the last tile
+// standing in for the remainder.
+func attachmentGridClass(count int) string {
+	if count > types.AttachmentTilesShown {
+		return "attachments count-many"
+	}
+	return fmt.Sprintf("attachments count-%d", count)
+}
+
+// visibleAttachments returns the tiles rendered inline. When there are more
+// photos than fit, the last slot is given over to the "+n" tile, so only
+// AttachmentTilesShown-1 plain tiles are shown.
+func visibleAttachments(files []types.MessageFile) []types.MessageFile {
+	if len(files) <= types.AttachmentTilesShown {
+		return files
+	}
+	return files[:types.AttachmentTilesShown-1]
+}
+
+func hiddenAttachmentCount(files []types.MessageFile) int {
+	if len(files) <= types.AttachmentTilesShown {
+		return 0
+	}
+	return len(files) - (types.AttachmentTilesShown - 1)
+}
+
+// Timestamps render in UTC: the browser is the only thing that knows the
+// viewer's timezone, and converting would cost a line of JavaScript. The
+// datetime attribute carries the full value for anyone who hovers.
+func messageTimestamp(m *types.ResponseMessage) string {
+	return m.MessageCreatedAt.UTC().Format("15:04")
+}
+
+func messageTimestampFull(m *types.ResponseMessage) string {
+	return m.MessageCreatedAt.UTC().Format("2006-01-02 15:04:05 UTC")
+}
+
+templ AttachmentTile(f types.MessageFile) {
+	<img src={ f.FileURL() } alt="Photo" loading="lazy" decoding="async"/>
+}
+
+templ AttachmentMoreTile(f types.MessageFile, chatID int, messageID int, hidden int) {
+	<button
+		class="attachment-more"
+		type="button"
+		hx-get={ messageFilesURL(chatID, messageID) }
+		hx-target="#chat-modal"
+		hx-swap="innerHTML"
+		aria-label={ fmt.Sprintf("Show all %d photos", hidden+types.AttachmentTilesShown-1) }
+	>
+		<img src={ f.FileURL() } alt="" loading="lazy" decoding="async"/>
+		<span>+{ strconv.Itoa(hidden) }</span>
+	</button>
+}
+
+templ MessageAttachments(m *types.ResponseMessage) {
+	if len(m.Files) > 0 {
+		<div class={ attachmentGridClass(len(m.Files)) }>
+			for _, f := range visibleAttachments(m.Files) {
+				@AttachmentTile(f)
+			}
+			if hiddenAttachmentCount(m.Files) > 0 {
+				@AttachmentMoreTile(m.Files[types.AttachmentTilesShown-1], m.ChatID, m.MessageID, hiddenAttachmentCount(m.Files))
+			}
+		</div>
+	}
+}
+
+// ChatMessageBubble is rendered once per recipient, because IsSender
+// differs between them. Both the history replay and the live stream in
+// MessageEvents render through here, so there is exactly one definition of
+// what a message looks like.
+templ ChatMessageBubble(m *types.ResponseMessage) {
+	<div class={ bubbleClass(m.IsSender) }>
+		<div class="message-body">
+			<div class="username">{ "@" + m.Username }</div>
+			@MessageAttachments(m)
+			if m.Text != "" {
+				<div class="message-text">{ m.Text }</div>
+			}
+			<time class="timestamp" datetime={ messageTimestampFull(m) }>{ messageTimestamp(m) }</time>
+		</div>
+	</div>
+}
+
+templ PartialMessageFileModal(m *types.ResponseMessage) {
+	<div class="modal is-active">
+		<div
+			class="modal-background"
+			hx-get={ modalCloseURL(m.ChatID) }
+			hx-target="#chat-modal"
+			hx-swap="innerHTML"
+		></div>
+		<div class="modal-content">
+			<div class="attachments-all">
+				for _, f := range m.Files {
+					<img src={ f.FileURL() } alt="Photo" loading="lazy" decoding="async"/>
+				}
+			</div>
+		</div>
+		<button
+			class="modal-close is-large"
+			aria-label="close"
+			hx-get={ modalCloseURL(m.ChatID) }
+			hx-target="#chat-modal"
+			hx-swap="innerHTML"
+		></button>
+	</div>
+}
+
+// MessageInputBar is re-rendered by MessageCreate on every send. Swapping
+// the whole form is what clears the text box and the file picker, so no
+// JavaScript is needed to reset it.
+templ MessageInputBar(chatID int, errorMessage string) {
+	<form
+		class="chat-input-bar"
+		hx-post={ messageSendURL(chatID) }
+		hx-encoding="multipart/form-data"
+		hx-target="this"
+		hx-swap="outerHTML"
+		hx-disabled-elt="find button[type='submit']"
+	>
+		if errorMessage != "" {
+			<p class="chat-input-error">{ errorMessage }</p>
+		}
+		<div class="field has-addons is-fullwidth">
+			<div class="control">
+				<div class="file is-small">
+					<label class="file-label">
+						<input
+							class="file-input"
+							type="file"
+							name="files"
+							multiple
+							accept="image/jpeg,image/png,image/gif,image/webp"
+							onchange="this.closest('.file').querySelector('.file-count').textContent = this.files.length ? this.files.length + ' 📷' : ''"
+						/>
+						<span class="file-cta">
+							<span class="file-label">📎</span>
+						</span>
+						<span class="file-count"></span>
+					</label>
+				</div>
+			</div>
+			<div class="control is-expanded">
+				<input
+					class="input"
+					id="messageInput"
+					name="text"
+					type="text"
+					placeholder="Type a message…"
+					autocomplete="off"
+					maxlength="1024"
+				/>
+			</div>
+			<div class="control">
+				<button class="button is-primary" type="submit">Send</button>
+			</div>
+		</div>
+	</form>
+}

@@ -34,6 +34,13 @@ const (
 	ChatMessageCreate = "chat.message.create"
 	ChatMessageEvents = "chat.message.events"
 
+	// ChatFile serves attachment bytes. It's a real resource rather than
+	// an HTML fragment, so it takes no "partial." prefix.
+	ChatFile = "chat.file"
+
+	PartialChatMessageFiles = "partial.chat.message.files"
+	PartialChatModalClose   = "partial.chat.modal.close"
+
 	ChatProfilePage   = "chat.profile.page"
 	ChatProfileDelete = "chat.profile.delete"
 
@@ -49,8 +56,10 @@ const (
 )
 
 const (
-	chatIDParam = "{chat_id}"
-	userIDParam = "{user_id}"
+	chatIDParam    = "{chat_id}"
+	userIDParam    = "{user_id}"
+	messageIDParam = "{message_id}"
+	fileIDParam    = "{file_id}"
 )
 
 // Register populates the global reverse.Urls store with every route in the
@@ -86,6 +95,11 @@ func Register() {
 	reverse.Add(ChatMessageCreate, "/chat/"+chatIDParam+"/message/create", chatIDParam)
 	reverse.Add(ChatMessageEvents, "/chat/"+chatIDParam+"/message/events", chatIDParam)
 
+	// chat_id is in the path so that authorizing a download is a single
+	// join against chat_user, with no lookup to discover which chat the
+	// file belongs to.
+	reverse.Add(ChatFile, "/chat/"+chatIDParam+"/file/"+fileIDParam, chatIDParam, fileIDParam)
+
 	reverse.Add(ChatProfilePage, "/chat/"+chatIDParam+"/profile", chatIDParam)
 	reverse.Add(ChatProfileDelete, "/chat/"+chatIDParam+"/profile/delete", chatIDParam)
 
@@ -98,6 +112,9 @@ func Register() {
 	reverse.Add(PartialChatUserSearch, "/partial/chat/"+chatIDParam+"/user/search", chatIDParam)
 	reverse.Add(PartialChatUserAdd, "/partial/chat/"+chatIDParam+"/user/"+userIDParam+"/add", chatIDParam, userIDParam)
 	reverse.Add(PartialChatUserAddUndo, "/partial/chat/"+chatIDParam+"/user/"+userIDParam+"/add/undo", chatIDParam, userIDParam)
+
+	reverse.Add(PartialChatMessageFiles, "/partial/chat/"+chatIDParam+"/message/"+messageIDParam+"/files", chatIDParam, messageIDParam)
+	reverse.Add(PartialChatModalClose, "/partial/chat/"+chatIDParam+"/modal/close", chatIDParam)
 }
 
 // Pattern returns the chi route pattern registered for name, e.g.

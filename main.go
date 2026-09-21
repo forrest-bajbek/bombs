@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"embed"
 	"fmt"
@@ -16,12 +17,18 @@ import (
 	"github.com/forrest-bajbek/bombs/utils"
 	_ "github.com/joho/godotenv/autoload"
 
+	"github.com/ncruces/go-sqlite3"
 	_ "github.com/ncruces/go-sqlite3/driver"
 	"github.com/pressly/goose/v3"
 )
 
 //go:embed migrations/*
 var embedMigrations embed.FS
+
+// maxSQLiteMemory is the ceiling for the WASM SQLite heap. Keep it
+// comfortably above types.StorageBudgetBytes, which is what actually
+// bounds how many photos can be stored.
+const maxSQLiteMemory = 1 << 30 // 1GB
 
 func main() {
 	// Database
@@ -48,6 +55,18 @@ func main() {
 	db.SetMaxIdleConns(1)
 	db.SetConnMaxLifetime(0)
 	db.SetConnMaxIdleTime(0)
+
+	// The SQLite driver runs as WASM and defaults to a 256MB heap for the
+	// whole database. Photo attachments live in the in-memory database, so
+	// that ceiling is reached quickly - and running into it fails every
+	// query in the app, not just the upload that crossed the line.
+	//
+	// The limit is read off the context used to open a connection, so this
+	// has to happen on the very first connection, before EnsureMemDB runs
+	// and while the pool above guarantees there will only ever be one.
+	if err := db.PingContext(sqlite3.WithMaxMemory(context.Background(), maxSQLiteMemory)); err != nil {
+		panic(err)
+	}
 
 	// The in-memory database above doesn't survive a process restart, so it
 	// must be (re)created unconditionally on every boot, on this same

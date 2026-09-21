@@ -84,6 +84,11 @@ func (s *Server) ListenAndServe(addr string) error {
 		r.Get(routes.Pattern(routes.ChatPage), s.handler.ChatPage)
 		r.Post(routes.Pattern(routes.ChatMessageCreate), s.handler.MessageCreate)
 		r.Get(routes.Pattern(routes.ChatMessageEvents), s.handler.MessageEvents)
+		r.Get(routes.Pattern(routes.ChatFile), s.handler.ChatFile)
+
+		// Attachments
+		r.Get(routes.Pattern(routes.PartialChatMessageFiles), s.handler.PartialChatMessageFiles)
+		r.Get(routes.Pattern(routes.PartialChatModalClose), s.handler.PartialChatModalClose)
 
 		// Chat Profile
 		// ----------------------------------------------------------------------------
