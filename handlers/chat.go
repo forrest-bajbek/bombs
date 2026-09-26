@@ -402,11 +402,22 @@ func (h *Handler) PartialChatMessageFiles(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	// A missing or garbled index opens the first photo; one outside the
+	// message's photos is a tampered URL.
+	index, err := strconv.Atoi(r.URL.Query().Get("i"))
+	if err != nil {
+		index = 0
+	}
+	if index < 0 || index >= len(m.Files) {
+		http.NotFound(w, r)
+		return
+	}
+
 	rm := types.ResponseMessage{
 		ChannelMessage: *m,
 		IsSender:       m.UserID == requestingUser.ID,
 	}
-	components.PartialMessageFileModal(&rm).Render(context.Background(), w)
+	components.PartialMessageFileModal(&rm, index).Render(context.Background(), w)
 }
 
 // PartialChatModalClose empties the modal container. It must answer 200

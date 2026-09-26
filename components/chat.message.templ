@@ -8,8 +8,9 @@ import (
 	"github.com/forrest-bajbek/bombs/types"
 )
 
-func messageFilesURL(chatID int, messageID int) string {
-	return routes.URL(routes.PartialChatMessageFiles, strconv.Itoa(chatID), strconv.Itoa(messageID))
+// messageFilesURL opens the lightbox at the given 0-based photo index.
+func messageFilesURL(chatID int, messageID int, index int) string {
+	return routes.URL(routes.PartialChatMessageFiles, strconv.Itoa(chatID), strconv.Itoa(messageID)) + "?i=" + strconv.Itoa(index)
 }
 
 func modalCloseURL(chatID int) string {
@@ -61,15 +62,24 @@ func messageTimestampFull(m *types.ResponseMessage) string {
 	return m.MessageCreatedAt.UTC().Format("2006-01-02 15:04:05 UTC")
 }
 
-templ AttachmentTile(f types.MessageFile) {
-	<img src={ f.FileURL() } alt="Photo" loading="lazy" decoding="async"/>
+templ AttachmentTile(f types.MessageFile, chatID int, messageID int, index int) {
+	<button
+		class="attachment-tile"
+		type="button"
+		hx-get={ messageFilesURL(chatID, messageID, index) }
+		hx-target="#chat-modal"
+		hx-swap="innerHTML"
+		aria-label={ fmt.Sprintf("Open photo %d", index+1) }
+	>
+		<img src={ f.FileURL() } alt="Photo" loading="lazy" decoding="async"/>
+	</button>
 }
 
 templ AttachmentMoreTile(f types.MessageFile, chatID int, messageID int, hidden int) {
 	<button
 		class="attachment-more"
 		type="button"
-		hx-get={ messageFilesURL(chatID, messageID) }
+		hx-get={ messageFilesURL(chatID, messageID, types.AttachmentTilesShown-1) }
 		hx-target="#chat-modal"
 		hx-swap="innerHTML"
 		aria-label={ fmt.Sprintf("Show all %d photos", hidden+types.AttachmentTilesShown-1) }
@@ -82,8 +92,8 @@ templ AttachmentMoreTile(f types.MessageFile, chatID int, messageID int, hidden 
 templ MessageAttachments(m *types.ResponseMessage) {
 	if len(m.Files) > 0 {
 		<div class={ attachmentGridClass(len(m.Files)) }>
-			for _, f := range visibleAttachments(m.Files) {
-				@AttachmentTile(f)
+			for i, f := range visibleAttachments(m.Files) {
+				@AttachmentTile(f, m.ChatID, m.MessageID, i)
 			}
 			if hiddenAttachmentCount(m.Files) > 0 {
 				@AttachmentMoreTile(m.Files[types.AttachmentTilesShown-1], m.ChatID, m.MessageID, hiddenAttachmentCount(m.Files))
@@ -109,7 +119,11 @@ templ ChatMessageBubble(m *types.ResponseMessage) {
 	</div>
 }
 
-templ PartialMessageFileModal(m *types.ResponseMessage) {
+// PartialMessageFileModal shows one photo at a time. Prev/next re-fetch
+// this partial with a neighbouring index; at either end the button is
+// simply not rendered, so the arrow key bound to it does nothing. The
+// handler guarantees index is in range.
+templ PartialMessageFileModal(m *types.ResponseMessage, index int) {
 	<div class="modal is-active">
 		<div
 			class="modal-background"
@@ -118,12 +132,35 @@ templ PartialMessageFileModal(m *types.ResponseMessage) {
 			hx-swap="innerHTML"
 		></div>
 		<div class="modal-content">
-			<div class="attachments-all">
-				for _, f := range m.Files {
-					<img src={ f.FileURL() } alt="Photo" loading="lazy" decoding="async"/>
+			<figure class="lightbox">
+				<img src={ m.Files[index].FileURL() } alt="Photo" decoding="async"/>
+				if len(m.Files) > 1 {
+					<figcaption>{ strconv.Itoa(index+1) } / { strconv.Itoa(len(m.Files)) }</figcaption>
 				}
-			</div>
+			</figure>
 		</div>
+		if index > 0 {
+			<button
+				class="lightbox-nav is-prev"
+				type="button"
+				aria-label="Previous photo"
+				hx-get={ messageFilesURL(m.ChatID, m.MessageID, index-1) }
+				hx-trigger="click, keyup[key=='ArrowLeft'] from:body"
+				hx-target="#chat-modal"
+				hx-swap="innerHTML"
+			>&lsaquo;</button>
+		}
+		if index < len(m.Files)-1 {
+			<button
+				class="lightbox-nav is-next"
+				type="button"
+				aria-label="Next photo"
+				hx-get={ messageFilesURL(m.ChatID, m.MessageID, index+1) }
+				hx-trigger="click, keyup[key=='ArrowRight'] from:body"
+				hx-target="#chat-modal"
+				hx-swap="innerHTML"
+			>&rsaquo;</button>
+		}
 		<button
 			class="modal-close is-large"
 			aria-label="close"

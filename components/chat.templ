@@ -187,6 +187,7 @@ templ ChatPage(chat *types.Chat) {
     .attachments.count-4 img,
     .attachments.count-many img { aspect-ratio: 1; }
 
+    .attachment-tile,
     .attachment-more {
       position: relative;
       padding: 0;
@@ -213,20 +214,44 @@ templ ChatPage(chat *types.Chat) {
     /* Bulma's modal sits at z-index 40, below the fixed nav and input bar. */
     .modal { z-index: 200; }
 
-    .attachments-all {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
-      gap: 4px;
+    .modal-content { width: min(90vw, 60rem); }
+
+    .lightbox { margin: 0; }
+
+    .lightbox img {
+      display: block;
+      max-width: 100%;
+      max-height: 80vh;
+      margin: auto;
+      object-fit: contain;
     }
 
-    .attachments-all img {
-      display: block;
-      width: 100%;
-      aspect-ratio: 1;
-      object-fit: cover;
-      background: #1a1a1a;
-      border-radius: 0.25rem;
+    .lightbox figcaption {
+      margin-top: 0.5rem;
+      text-align: center;
+      color: #ffffff;
     }
+
+    .lightbox-nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 1;
+      width: 3rem;
+      height: 3rem;
+      padding: 0;
+      border: none;
+      border-radius: 50%;
+      background: rgba(10, 10, 10, 0.5);
+      color: #ffffff;
+      font-size: 2rem;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .lightbox-nav:hover { background: rgba(10, 10, 10, 0.8); }
+    .lightbox-nav.is-prev { left: 1rem; }
+    .lightbox-nav.is-next { right: 1rem; }
   </style>
 
 			// Nav
