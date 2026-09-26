@@ -1,12 +1,12 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"embed"
 	"fmt"
 	"log"
 	"os"
-	"time"
 
 	"github.com/forrest-bajbek/bombs/handlers"
 	"github.com/forrest-bajbek/bombs/hub"
@@ -17,12 +17,18 @@ import (
 	"github.com/forrest-bajbek/bombs/utils"
 	_ "github.com/joho/godotenv/autoload"
 
+	"github.com/ncruces/go-sqlite3"
 	_ "github.com/ncruces/go-sqlite3/driver"
 	"github.com/pressly/goose/v3"
 )
 
 //go:embed migrations/*
 var embedMigrations embed.FS
+
+// maxSQLiteMemory is the ceiling for the WASM SQLite heap. Keep it
+// comfortably above types.StorageBudgetBytes, which is what actually
+// bounds how many photos can be stored.
+const maxSQLiteMemory = 1 << 30 // 1GB
 
 func main() {
 	// Database
@@ -40,6 +46,36 @@ func main() {
 	}
 	defer db.Close()
 
+	// The message table lives in an attached in-memory database, which only
+	// persists for as long as at least one connection keeps it attached.
+	// Pinning the pool to a single, never-recycled connection guarantees
+	// that connection - and therefore the in-memory database - is never
+	// closed.
+	db.SetMaxOpenConns(1)
+	db.SetMaxIdleConns(1)
+	db.SetConnMaxLifetime(0)
+	db.SetConnMaxIdleTime(0)
+
+	// The SQLite driver runs as WASM and defaults to a 256MB heap for the
+	// whole database. Photo attachments live in the in-memory database, so
+	// that ceiling is reached quickly - and running into it fails every
+	// query in the app, not just the upload that crossed the line.
+	//
+	// The limit is read off the context used to open a connection, so this
+	// has to happen on the very first connection, before EnsureMemDB runs
+	// and while the pool above guarantees there will only ever be one.
+	if err := db.PingContext(sqlite3.WithMaxMemory(context.Background(), maxSQLiteMemory)); err != nil {
+		panic(err)
+	}
+
+	// The in-memory database above doesn't survive a process restart, so it
+	// must be (re)created unconditionally on every boot, on this same
+	// pinned connection - see EnsureMemDB for why this can't be a normal
+	// goose migration.
+	if err := sqlite.EnsureMemDB(db); err != nil {
+		panic(err)
+	}
+
 	// Database Migrations
 	goose.SetBaseFS(embedMigrations)
 	if err := goose.SetDialect("sqlite3"); err != nil {
@@ -48,33 +84,6 @@ func main() {
 	if err := goose.Up(db, "migrations"); err != nil {
 		panic(err)
 	}
-
-	// For some reason, the messages table keeps disappearing.
-	// So to fix, I'm going to check for existence every 5 seconds.
-	// Not the best solution, but gets the job done.
-	go func() {
-		// not sure if I need to defer db.Close() here...
-		for {
-			// last migration is always the message table
-			memdb_exists, err := sqlite.IsDatabaseAttached(db, "memdb")
-			if err != nil {
-				panic(err)
-			}
-			if !memdb_exists {
-				_, err := db.Exec("ATTACH DATABASE 'file:memdb?mode=memory&cache=shared' AS memdb")
-				if err != nil {
-					panic(err)
-				}
-			}
-			if err := goose.Down(db, "migrations"); err != nil {
-				panic(err)
-			}
-			if err := goose.Up(db, "migrations"); err != nil {
-				panic(err)
-			}
-			time.Sleep(5 * time.Second)
-		}
-	}()
 
 	tokenMaker := token.NewJWTMaker()
 	encrypter := utils.NewEncrypter()

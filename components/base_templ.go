@@ -8,6 +8,7 @@ package components
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
+import "github.com/forrest-bajbek/bombs/routes"
 import "github.com/forrest-bajbek/bombs/types"
 
 func BasePage(title string) templ.Component {
@@ -31,14 +32,14 @@ func BasePage(title string) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"en\" class=\"theme-dark has-navbar-fixed-top\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.min.css\"><script src=\"https://cdn.jsdelivr.net/npm/htmx.org@2.0.10/dist/htmx.min.js\" integrity=\"sha384-H5SrcfygHmAuTDZphMHqBJLc3FhssKjG7w/CeCpFReSfwBWDTKpkzPP8c+cLsK+V\" crossorigin=\"anonymous\"></script><title>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"en\" class=\"theme-dark has-navbar-fixed-top\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.min.css\"><script src=\"https://cdn.jsdelivr.net/npm/htmx.org@2.0.10/dist/htmx.min.js\" integrity=\"sha384-H5SrcfygHmAuTDZphMHqBJLc3FhssKjG7w/CeCpFReSfwBWDTKpkzPP8c+cLsK+V\" crossorigin=\"anonymous\"></script><script src=\"https://cdn.jsdelivr.net/npm/htmx-ext-sse@2.2.3/sse.js\" integrity=\"sha384-fw+eTlCc7suMV/1w/7fr2/PmwElUIt5i82bi+qTiLXvjRXZ2/FkiTNA/w0MhXnGI\" crossorigin=\"anonymous\"></script><title>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/base.templ`, Line: 13, Col: 17}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/base.templ`, Line: 16, Col: 17}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -81,17 +82,82 @@ func BaseNav(user *types.User) templ.Component {
 			templ_7745c5c3_Var3 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<nav class=\"navbar is-fixed-top has-shadow\" role=\"navigation\"><div class=\"navbar-brand\"><a class=\"navbar-item\" href=\"/\">B💣MBS</a> <a role=\"button\" class=\"navbar-burger\" data-target=\"navbar-items\"><span></span> <span></span> <span></span> <span></span></a></div><div class=\"navbar-menu\" id=\"navbar-items\"><div class=\"navbar-start\"><a class=\"navbar-item\" href=\"/user/profile\">Profile</a> <a class=\"navbar-item\" href=\"/chat/create\">Create Chat</a> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<nav class=\"navbar is-fixed-top has-shadow\" role=\"navigation\"><div class=\"navbar-brand\"><a class=\"navbar-item\" href=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var4 templ.SafeURL
+		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinURLErrs(routes.URL(routes.Home))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/base.templ`, Line: 27, Col: 56}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\">B💣MBS</a> <a role=\"button\" class=\"navbar-burger\" data-target=\"navbar-items\"><span></span> <span></span> <span></span> <span></span></a></div><div class=\"navbar-menu\" id=\"navbar-items\"><div class=\"navbar-start\"><a class=\"navbar-item\" href=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var5 templ.SafeURL
+		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinURLErrs(routes.URL(routes.UserProfilePage))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/base.templ`, Line: 37, Col: 68}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\">Profile</a> <a class=\"navbar-item\" href=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var6 templ.SafeURL
+		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinURLErrs(routes.URL(routes.ChatCreatePage))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/base.templ`, Line: 38, Col: 67}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\">Create Chat</a> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if user.IsAdmin {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<a class=\"navbar-item\" href=\"/user/invite\">Invite User</a>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<a class=\"navbar-item\" href=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var7 templ.SafeURL
+			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinURLErrs(routes.URL(routes.UserInvitePage))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/base.templ`, Line: 40, Col: 68}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\">Invite User</a>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</div><div class=\"navbar-end\"><a class=\"navbar-item\" href=\"#\" id=\"logout-form-submit\">Logout</a><form id=\"logout-form\" class=\"navbar-item\" action=\"/logout\" method=\"POST\"><script>\n\t\t\t\t\tdocument.getElementById('logout-form-submit').onclick = function(event) {\n\t\t\t\t\t\tif (confirm('Log Out?')) {\n\t\t\t\t\t\t\tevent.preventDefault(); // Prevents the link from following the '#' URL\n\t\t\t\t\t\t\tdocument.getElementById('logout-form').submit();\n\t\t\t\t\t\t}\n\t\t\t\t\t};\n\t\t\t\t</script></form></div></div><script>\n\t\t\tdocument.addEventListener('DOMContentLoaded', () => {\n\t\t\t\t// Get all \"navbar-burger\" elements\n\t\t\t\tconst $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);\n\t\t\t\t// Add a click event on each of them\n\t\t\t\t$navbarBurgers.forEach(el => {\n\t\t\t\t\tel.addEventListener('click', () => {\n\t\t\t\t\t\t// Get the target from the \"data-target\" attribute\n\t\t\t\t\t\tconst target = el.dataset.target;\n\t\t\t\t\t\tconst $target = document.getElementById(target);\n\t\t\t\t\t\t// Toggle the \"is-active\" class on both the \"navbar-burger\" and the \"navbar-menu\"\n\t\t\t\t\t\tel.classList.toggle('is-active');\n\t\t\t\t\t\t$target.classList.toggle('is-active');\n\t\t\t\t\t});\n\t\t\t\t});\n\t\t\t});\n\t\t</script></nav>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</div><div class=\"navbar-end\"><a class=\"navbar-item\" href=\"#\" id=\"logout-form-submit\">Logout</a><form id=\"logout-form\" class=\"navbar-item\" action=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var8 templ.SafeURL
+		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinURLErrs(routes.URL(routes.Logout))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/base.templ`, Line: 45, Col: 81}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "\" method=\"POST\"><script>\n\t\t\t\t\tdocument.getElementById('logout-form-submit').onclick = function(event) {\n\t\t\t\t\t\tif (confirm('Log Out?')) {\n\t\t\t\t\t\t\tevent.preventDefault(); // Prevents the link from following the '#' URL\n\t\t\t\t\t\t\tdocument.getElementById('logout-form').submit();\n\t\t\t\t\t\t}\n\t\t\t\t\t};\n\t\t\t\t</script></form></div></div><script>\n\t\t\tdocument.addEventListener('DOMContentLoaded', () => {\n\t\t\t\t// Get all \"navbar-burger\" elements\n\t\t\t\tconst $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);\n\t\t\t\t// Add a click event on each of them\n\t\t\t\t$navbarBurgers.forEach(el => {\n\t\t\t\t\tel.addEventListener('click', () => {\n\t\t\t\t\t\t// Get the target from the \"data-target\" attribute\n\t\t\t\t\t\tconst target = el.dataset.target;\n\t\t\t\t\t\tconst $target = document.getElementById(target);\n\t\t\t\t\t\t// Toggle the \"is-active\" class on both the \"navbar-burger\" and the \"navbar-menu\"\n\t\t\t\t\t\tel.classList.toggle('is-active');\n\t\t\t\t\t\t$target.classList.toggle('is-active');\n\t\t\t\t\t});\n\t\t\t\t});\n\t\t\t});\n\t\t</script></nav>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

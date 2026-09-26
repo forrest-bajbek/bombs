@@ -1,14 +1,15 @@
 package components
 
+import "github.com/forrest-bajbek/bombs/routes"
 import "github.com/forrest-bajbek/bombs/types"
 
 templ ChatCreatePage(user *types.User, chatName string, errorMessage string) {
 @BasePage("Create Chat") {
 @BaseNav(user) {
 <div class="box content">
-	<a class="button" href="/">Back</a>
+	<a class="button" href={ routes.URL(routes.Home) }>Back</a>
 	<h1>Create New Chat</h1>
-	<form action="/chat/create" method="POST">
+	<form action={ routes.URL(routes.ChatCreate) } method="POST">
 		<div class="field">
 			<label class="label">Name</label>
 			<div class="control">

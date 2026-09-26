@@ -6,13 +6,14 @@ import (
 
 	"github.com/forrest-bajbek/bombs/components"
 	"github.com/forrest-bajbek/bombs/middlewares"
+	"github.com/forrest-bajbek/bombs/routes"
 	"github.com/forrest-bajbek/bombs/types"
 )
 
 func (h *Handler) UserProfilePage(w http.ResponseWriter, r *http.Request) {
 	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
 	if !ok {
-		http.Redirect(w, r, "/login", http.StatusFound)
+		http.Redirect(w, r, routes.URL(routes.LoginPage), http.StatusFound)
 	}
 
 	component := components.UserProfilePage(requestingUser)
@@ -22,7 +23,7 @@ func (h *Handler) UserProfilePage(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) UserProfileDeletePage(w http.ResponseWriter, r *http.Request) {
 	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
 	if !ok {
-		http.Redirect(w, r, "/login", http.StatusFound)
+		http.Redirect(w, r, routes.URL(routes.LoginPage), http.StatusFound)
 	}
 	component := components.UserProfileDeletePage(requestingUser)
 	component.Render(context.Background(), w)
@@ -31,7 +32,7 @@ func (h *Handler) UserProfileDeletePage(w http.ResponseWriter, r *http.Request) 
 func (h *Handler) UserProfileDelete(w http.ResponseWriter, r *http.Request) {
 	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
 	if !ok {
-		http.Redirect(w, r, "/login", http.StatusFound)
+		http.Redirect(w, r, routes.URL(routes.LoginPage), http.StatusFound)
 	}
 
 	err := h.service.DeleteMessageByUserID(requestingUser.ID)
@@ -49,13 +50,13 @@ func (h *Handler) UserProfileDelete(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), 400)
 	}
 
-	http.Redirect(w, r, "/login", http.StatusFound)
+	http.Redirect(w, r, routes.URL(routes.LoginPage), http.StatusFound)
 }
 
 func (h *Handler) UserProfilePartialPassword(w http.ResponseWriter, r *http.Request) {
 	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
 	if !ok {
-		http.Redirect(w, r, "/login", http.StatusFound)
+		http.Redirect(w, r, routes.URL(routes.LoginPage), http.StatusFound)
 	}
 
 	err := r.ParseForm()

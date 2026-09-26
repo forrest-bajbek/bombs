@@ -2,7 +2,10 @@ package types
 
 import (
 	"fmt"
+	"strconv"
 	"time"
+
+	"github.com/forrest-bajbek/bombs/routes"
 )
 
 type Message struct {
@@ -14,12 +17,13 @@ type Message struct {
 }
 
 type ChannelMessage struct {
-	MessageID        int       `json:"message_id"`
-	MessageCreatedAt time.Time `json:"message_created_at"`
-	ChatID           int       `json:"chat_id"`
-	UserID           int       `json:"user_id"`
-	Username         string    `json:"username"`
-	Text             string    `json:"text"`
+	MessageID        int           `json:"message_id"`
+	MessageCreatedAt time.Time     `json:"message_created_at"`
+	ChatID           int           `json:"chat_id"`
+	UserID           int           `json:"user_id"`
+	Username         string        `json:"username"`
+	Text             string        `json:"text"`
+	Files            []MessageFile `json:"files"`
 }
 
 type ResponseMessage struct {
@@ -36,7 +40,7 @@ type ChatPreview struct {
 }
 
 func (c *ChatPreview) ChatURL() string {
-	return fmt.Sprintf("/chat/%d", c.ChatID)
+	return routes.URL(routes.ChatPage, strconv.Itoa(c.ChatID))
 }
 
 func (c *ChatPreview) LastMessageTextPreview() string {

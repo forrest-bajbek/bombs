@@ -1,5 +1,6 @@
 package components
 
+import "github.com/forrest-bajbek/bombs/routes"
 import "github.com/forrest-bajbek/bombs/types"
 
 templ BasePage(title string) {
@@ -10,6 +11,8 @@ templ BasePage(title string) {
 			<meta name="viewport" content="width=device-width, initial-scale=1.0">
 			<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.min.css">
 			<script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.10/dist/htmx.min.js" integrity="sha384-H5SrcfygHmAuTDZphMHqBJLc3FhssKjG7w/CeCpFReSfwBWDTKpkzPP8c+cLsK+V" crossorigin="anonymous"></script>
+			// Must load after htmx core. Drives the live message stream on the chat page.
+			<script src="https://cdn.jsdelivr.net/npm/htmx-ext-sse@2.2.3/sse.js" integrity="sha384-fw+eTlCc7suMV/1w/7fr2/PmwElUIt5i82bi+qTiLXvjRXZ2/FkiTNA/w0MhXnGI" crossorigin="anonymous"></script>
 			<title>{ title }</title>
 		</head>
 		<body>
@@ -21,7 +24,7 @@ templ BasePage(title string) {
 templ BaseNav(user *types.User) {
 	<nav class="navbar is-fixed-top has-shadow" role="navigation">
 		<div class="navbar-brand">
-			<a class="navbar-item" href="/">B💣MBS</a>
+			<a class="navbar-item" href={ routes.URL(routes.Home) }>B💣MBS</a>
 			<a role="button" class="navbar-burger" data-target="navbar-items">
 				<span></span>
 				<span></span>
@@ -31,15 +34,15 @@ templ BaseNav(user *types.User) {
 		</div>
 		<div class="navbar-menu" id="navbar-items">
 			<div class="navbar-start">
-				<a class="navbar-item" href="/user/profile">Profile</a>
-				<a class="navbar-item" href="/chat/create">Create Chat</a>
+				<a class="navbar-item" href={ routes.URL(routes.UserProfilePage) }>Profile</a>
+				<a class="navbar-item" href={ routes.URL(routes.ChatCreatePage) }>Create Chat</a>
 				if user.IsAdmin{
-					<a class="navbar-item" href="/user/invite">Invite User</a>
+					<a class="navbar-item" href={ routes.URL(routes.UserInvitePage) }>Invite User</a>
 				}
 			</div>
 			<div class="navbar-end">
 				<a class="navbar-item" href="#" id="logout-form-submit">Logout</a>
-				<form id="logout-form" class="navbar-item" action="/logout" method="POST">
+				<form id="logout-form" class="navbar-item" action={ routes.URL(routes.Logout) } method="POST">
 				<script>
 					document.getElementById('logout-form-submit').onclick = function(event) {
 						if (confirm('Log Out?')) {

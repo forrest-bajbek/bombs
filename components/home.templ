@@ -1,6 +1,7 @@
 package components
 
 import (
+    "github.com/forrest-bajbek/bombs/routes"
     "github.com/forrest-bajbek/bombs/types"
 		"time"
 )
@@ -16,7 +17,7 @@ templ HomePage(user *types.User, chatPreviews *[]types.ChatPreview) {
 templ ChatPreviewList(chatPreviews *[]types.ChatPreview) {
 	if len(*chatPreviews) == 0 {
 		<div class="box">
-			<p>No chats! <a href="/chat/create">Create One?</a></p>
+			<p>No chats! <a href={ routes.URL(routes.ChatCreatePage) }>Create One?</a></p>
 		</div>
 	} else {
 		for _, preview := range *chatPreviews {

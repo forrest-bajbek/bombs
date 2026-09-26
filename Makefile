@@ -17,4 +17,4 @@ clear:
 	rm -f user.db
 
 templ:
-	templ generate --watch --cmd="go run ." --proxy="http://localhost:9000"
+	go tool templ generate --watch --cmd="go run ." --proxy="http://localhost:9000"

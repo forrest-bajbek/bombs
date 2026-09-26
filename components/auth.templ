@@ -1,13 +1,15 @@
 package components
 
+import "github.com/forrest-bajbek/bombs/routes"
+
 templ LoginPage(username string, password string, errorMessage string) {
 	@BasePage("Log In") {
 		<nav class="navbar is-fixed-top has-shadow" role="navigation">
 			<div class="navbar-brand">
-				<a class="navbar-item" href="/">B💣MBS</a>
+				<a class="navbar-item" href={ routes.URL(routes.Home) }>B💣MBS</a>
 			</div>
 		</nav>
-		<form class="box" action="/login" method="POST">
+		<form class="box" action={ routes.URL(routes.Login) } method="POST">
 			<div class="field">
 				<label class="label">Username</label>
 				<div class="control">
@@ -37,7 +39,7 @@ templ LoginPage(username string, password string, errorMessage string) {
 						placeholder="password"
 						id="password"
 						name="password"
-						minlength="6"
+						minlength="5"
 						maxlength="64"
 						required
 						autocomplete="password"
