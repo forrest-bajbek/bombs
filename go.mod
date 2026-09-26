@@ -3,7 +3,7 @@ module github.com/forrest-bajbek/bombs
 go 1.26.1
 
 require (
-	github.com/a-h/templ v0.3.1001
+	github.com/a-h/templ v0.3.1020
 	github.com/alehano/reverse v0.0.0-20170809190552-bf1a1f8f8b82
 	github.com/go-chi/chi/v5 v5.3.2
 	github.com/golang-jwt/jwt/v5 v5.3.1
