@@ -13,8 +13,8 @@ watch:
 migration:
 	goose create add_some_thing sql
 
-clear:
-	rm -f user.db
+nuke:
+	rm -f bombs.db
 
-templ:
+up:
 	go tool templ generate --watch --cmd="go run ." --proxy="http://localhost:9000"

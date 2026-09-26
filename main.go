@@ -25,11 +25,6 @@ import (
 //go:embed migrations/*
 var embedMigrations embed.FS
 
-// maxSQLiteMemory is the ceiling for the WASM SQLite heap. Keep it
-// comfortably above types.StorageBudgetBytes, which is what actually
-// bounds how many photos can be stored.
-const maxSQLiteMemory = 1 << 30 // 1GB
-
 func main() {
 	// Database
 	BOMBS_DATA_FOLDER := os.Getenv("BOMBS_DATA_FOLDER")
@@ -46,33 +41,17 @@ func main() {
 	}
 	defer db.Close()
 
-	// The message table lives in an attached in-memory database, which only
-	// persists for as long as at least one connection keeps it attached.
-	// Pinning the pool to a single, never-recycled connection guarantees
-	// that connection - and therefore the in-memory database - is never
-	// closed.
+	// Setting pool to 1 connection with no expiration keeps one conneciton open
+	// Required to keep in-memory tables alive.
 	db.SetMaxOpenConns(1)
 	db.SetMaxIdleConns(1)
 	db.SetConnMaxLifetime(0)
 	db.SetConnMaxIdleTime(0)
 
-	// The SQLite driver runs as WASM and defaults to a 256MB heap for the
-	// whole database. Photo attachments live in the in-memory database, so
-	// that ceiling is reached quickly - and running into it fails every
-	// query in the app, not just the upload that crossed the line.
-	//
-	// The limit is read off the context used to open a connection, so this
-	// has to happen on the very first connection, before EnsureMemDB runs
-	// and while the pool above guarantees there will only ever be one.
+	// SQLite WASM driver defaults to 256MB of heap for whole database.
+	// Setting maxSQLiteMemory to 1GB
+	const maxSQLiteMemory = 1 << 30 // 1GB
 	if err := db.PingContext(sqlite3.WithMaxMemory(context.Background(), maxSQLiteMemory)); err != nil {
-		panic(err)
-	}
-
-	// The in-memory database above doesn't survive a process restart, so it
-	// must be (re)created unconditionally on every boot, on this same
-	// pinned connection - see EnsureMemDB for why this can't be a normal
-	// goose migration.
-	if err := sqlite.EnsureMemDB(db); err != nil {
 		panic(err)
 	}
 
@@ -82,6 +61,11 @@ func main() {
 		panic(err)
 	}
 	if err := goose.Up(db, "migrations"); err != nil {
+		panic(err)
+	}
+
+	// Create in-memory tables
+	if err := sqlite.EnsureMemDB(db); err != nil {
 		panic(err)
 	}
 
@@ -95,8 +79,7 @@ func main() {
 		panic(err)
 	}
 
-	// Service is an "interface", or abstraction on top of the repository.
-	// This allows you to implement multiple storage mechanisms and swap them interchangeably.
+	// Storage mechanism
 	service := services.NewService(repo)
 
 	// Set up channels for existing chats
