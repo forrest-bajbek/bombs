@@ -13,14 +13,52 @@ func (r *Repo) StorageUsedBytes() (int64, error) {
 	return total, err
 }
 
-// getMessageFiles loads attachment metadata for a chat, or for one message
-// when messageID is non-zero.
+// Attachment metadata only. encrypted_content is deliberately absent from the
+// select list: history loads run over a whole chat, and pulling the blobs
+// would mean decrypting megabytes of photos just to render a grid of
+// thumbnails. The bytes are fetched one at a time by GetFile instead.
 
-// encrypted_content is deliberately absent from the select list: this runs
-// over whole pages of history, and pulling the blobs would mean decrypting
-// megabytes of photos just to render a grid of thumbnails. The bytes are
-// fetched one at a time by GetFile instead.
-func (r *Repo) GetMessageFiles(chatID int, messageID int) (map[int][]types.MessageFile, error) {
+// GetMessageFilesByMessageID loads attachment metadata for one message.
+func (r *Repo) GetMessageFilesByMessageID(chatID int, messageID int) ([]types.MessageFile, error) {
+	stmt := `
+		SELECT
+			f.id AS file_id
+			, f.chat_id
+			, f.mime_type
+			, mf.position
+		FROM message_file mf
+		INNER JOIN file f
+			ON mf.file_id = f.id
+		INNER JOIN message m
+			ON mf.message_id = m.id
+		WHERE
+			m.chat_id = ?
+			AND mf.message_id = ?
+		ORDER BY mf.position, mf.id
+	`
+	rows, err := r.db.Query(stmt, chatID, messageID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	filesByMessage := []types.MessageFile{}
+	for rows.Next() {
+		var f types.MessageFile
+		if err := rows.Scan(&f.FileID, &f.ChatID, &f.MimeType, &f.Position); err != nil {
+			return nil, fmt.Errorf("failed to scan message_file row: %w", err)
+		}
+		filesByMessage = append(filesByMessage, f)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return filesByMessage, nil
+}
+
+// GetMessageFilesByChatID loads attachment metadata for every message in a chat,
+// keyed by message ID.
+func (r *Repo) GetMessageFilesByChatID(chatID int) (map[int][]types.MessageFile, error) {
 	stmt := `
 		SELECT
 			mf.message_id
@@ -35,10 +73,10 @@ func (r *Repo) GetMessageFiles(chatID int, messageID int) (map[int][]types.Messa
 			ON mf.message_id = m.id
 		WHERE
 			m.chat_id = ?
-			AND mf.message_id = ?
 		ORDER BY mf.message_id, mf.position, mf.id
 	`
-	rows, err := r.db.Query(stmt, chatID, messageID)
+
+	rows, err := r.db.Query(stmt, chatID)
 	if err != nil {
 		return nil, err
 	}
@@ -46,12 +84,12 @@ func (r *Repo) GetMessageFiles(chatID int, messageID int) (map[int][]types.Messa
 
 	filesByMessage := map[int][]types.MessageFile{}
 	for rows.Next() {
-		var mID int
+		var messageID int
 		var f types.MessageFile
-		if err := rows.Scan(&mID, &f.FileID, &f.ChatID, &f.MimeType, &f.Position); err != nil {
+		if err := rows.Scan(&messageID, &f.FileID, &f.ChatID, &f.MimeType, &f.Position); err != nil {
 			return nil, fmt.Errorf("failed to scan message_file row: %w", err)
 		}
-		filesByMessage[mID] = append(filesByMessage[mID], f)
+		filesByMessage[messageID] = append(filesByMessage[messageID], f)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

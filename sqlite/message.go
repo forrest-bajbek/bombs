@@ -119,11 +119,11 @@ func (r *Repo) GetMessageByID(requestingUserID int, chatID int, messageID int) (
 	}
 	m.Text = text
 
-	filesByMessage, err := r.GetMessageFiles(chatID, messageID)
+	files, err := r.GetMessageFilesByMessageID(chatID, messageID)
 	if err != nil {
 		return nil, err
 	}
-	m.Files = filesByMessage[messageID]
+	m.Files = files
 
 	return &m, nil
 }
@@ -196,7 +196,7 @@ func (r *Repo) GetMessagesByChatID(requestingUserID int, chatID int) (*[]types.C
 		return &[]types.ChannelMessage{}, nil
 	}
 
-	filesByMessage, err := r.GetMessageFiles(chatID, 0)
+	filesByMessage, err := r.GetMessageFilesByChatID(chatID)
 	if err != nil {
 		return nil, err
 	}
