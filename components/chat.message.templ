@@ -128,6 +128,7 @@ templ PartialMessageFileModal(m *types.ResponseMessage) {
 			class="modal-close is-large"
 			aria-label="close"
 			hx-get={ modalCloseURL(m.ChatID) }
+			hx-trigger="click, keyup[key=='Escape'] from:body"
 			hx-target="#chat-modal"
 			hx-swap="innerHTML"
 		></button>

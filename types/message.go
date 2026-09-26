@@ -32,11 +32,12 @@ type ResponseMessage struct {
 }
 
 type ChatPreview struct {
-	ChatID               int
-	ChatName             string
-	LastMessageUsername  string
-	LastMessageText      string
-	LastMessageCreatedAt string
+	ChatID                 int
+	ChatName               string
+	LastMessageUsername    string
+	LastMessageText        string
+	LastMessageCreatedAt   string
+	LastMessageCountPhotos int
 }
 
 func (c *ChatPreview) ChatURL() string {
