@@ -2,7 +2,7 @@ package components
 
 import "github.com/forrest-bajbek/bombs/routes"
 
-templ LoginPage(username string, password string, errorMessage string) {
+templ LoginPage(username string, password string, errorMessage string, next string) {
 	@BasePage("Log In") {
 		<nav class="navbar is-fixed-top has-shadow" role="navigation">
 			<div class="navbar-brand">
@@ -10,6 +10,9 @@ templ LoginPage(username string, password string, errorMessage string) {
 			</div>
 		</nav>
 		<form class="box" action={ routes.URL(routes.Login) } method="POST">
+			if next != "" {
+				<input type="hidden" name="next" value={ next }/>
+			}
 			<div class="field">
 				<label class="label">Username</label>
 				<div class="control">

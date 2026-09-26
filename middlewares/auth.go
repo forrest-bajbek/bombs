@@ -3,9 +3,11 @@ package middlewares
 import (
 	"context"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 
+	"github.com/forrest-bajbek/bombs/routes"
 	"github.com/forrest-bajbek/bombs/services"
 	"github.com/forrest-bajbek/bombs/token"
 	"github.com/forrest-bajbek/bombs/types"
@@ -19,20 +21,47 @@ func writeUnauthed(w http.ResponseWriter) {
 	w.Write([]byte(http.StatusText(http.StatusUnauthorized)))
 }
 
+// redirectToLogin clears the auth cookie and sends the client to the login
+// page, carrying the page they were on as ?next= where that makes sense.
+func redirectToLogin(w http.ResponseWriter, r *http.Request) {
+	cookie := &http.Cookie{
+		Name:   "authToken",
+		Value:  "",
+		Path:   "/",
+		MaxAge: -1,
+	}
+	http.SetCookie(w, cookie)
+
+	// htmx would follow a 302 and swap the login page into the fragment
+	// target, so ask it for a full-page navigation instead. next is the
+	// page the user is on, not the partial being requested.
+	if r.Header.Get("HX-Request") == "true" {
+		next := ""
+		if u, err := url.Parse(r.Header.Get("HX-Current-URL")); err == nil {
+			next = u.RequestURI()
+		}
+		w.Header().Set("HX-Redirect", routes.LoginURL(next))
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	// Only top-level GET navigations make useful next targets; image loads,
+	// the SSE stream and form POSTs go to the bare login page.
+	fetchMode := r.Header.Get("Sec-Fetch-Mode")
+	if r.Method == http.MethodGet && (fetchMode == "navigate" || fetchMode == "") {
+		http.Redirect(w, r, routes.LoginURL(r.URL.RequestURI()), http.StatusFound)
+		return
+	}
+	http.Redirect(w, r, routes.LoginURL(""), http.StatusFound)
+}
+
 func IsAuthenticated(service *services.Service, tokenMaker *token.JWTMaker, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		userID, ok := r.Context().Value(AuthUserID).(int)
 		if !ok {
 			// log.Printf("++ Auth: userID not found in request context.")
 			// log.Printf("++ Auth: Removing cookie and redirecting to login.")
-			cookie := &http.Cookie{
-				Name:   "authToken",
-				Value:  "",
-				Path:   "/",
-				MaxAge: -1,
-			}
-			http.SetCookie(w, cookie)
-			http.Redirect(w, r, "/login", http.StatusFound)
+			redirectToLogin(w, r)
 			return
 		}
 		// log.Printf("++ Auth: userID found in request context: %d", userID)
@@ -40,14 +69,7 @@ func IsAuthenticated(service *services.Service, tokenMaker *token.JWTMaker, next
 		if err != nil {
 			// log.Printf("++ Auth: userID %d not found in databaes", userID)
 			// log.Printf("++ Auth: Removing cookie and redirecting to login.")
-			cookie := &http.Cookie{
-				Name:   "authToken",
-				Value:  "",
-				Path:   "/",
-				MaxAge: -1,
-			}
-			http.SetCookie(w, cookie)
-			http.Redirect(w, r, "/login", http.StatusFound)
+			redirectToLogin(w, r)
 			return
 		}
 
