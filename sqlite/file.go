@@ -75,7 +75,7 @@ func (r *Repo) GetFile(requestingUserID int, chatID int, fileID int) (*types.Fil
 		INNER JOIN chat c
 			ON m.chat_id = c.id
 		INNER JOIN chat_user cu
-			ON c.chat_id = cu.chat_id
+			ON c.id = cu.chat_id
 		INNER JOIN user u
 			ON u.id = cu.user_id
 		WHERE
