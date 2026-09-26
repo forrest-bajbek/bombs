@@ -3,11 +3,11 @@ package handlers
 import (
 	"context"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/forrest-bajbek/bombs/components"
 	"github.com/forrest-bajbek/bombs/routes"
-	"github.com/forrest-bajbek/bombs/utils"
 )
 
 func (h *Handler) LoginPage(w http.ResponseWriter, r *http.Request) {
@@ -46,7 +46,7 @@ func (h *Handler) LogIn(w http.ResponseWriter, r *http.Request) {
 		Expires:  time.Now().Add(15 * time.Minute),
 		MaxAge:   int(time.Now().Add(15 * time.Minute).Unix()),
 		HttpOnly: true,
-		Secure:   utils.IsHTTPS(r),
+		Secure:   os.Getenv("ENV") == "PROD",
 		SameSite: http.SameSiteStrictMode,
 	}
 	http.SetCookie(w, cookie)
