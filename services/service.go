@@ -1,49 +1,54 @@
 package services
 
 import (
-	"errors"
-	"fmt"
-	"strings"
-
 	"github.com/forrest-bajbek/bombs/types"
 )
 
 type Repo interface {
+	// user
 	CreateUser(username string, password string) (int, error)
-	CheckPassword(username string, password string) (int, error)
-	ChangePassword(username string, old_password string, new_password string) error
 	UserExists(username string) (bool, error)
 	GetUserByID(userID int) (*types.User, error)
 	GetUserByUsername(username string) (*types.User, error)
 	GetUsers() (*[]types.User, error)
 	SearchUsers(username string) (*[]types.User, error)
 	DeleteUser(userID int) error
+
+	// auth
+	CheckPassword(username string, password string) (int, error)
+	ChangePassword(username string, old_password string, new_password string) error
 	EnsureAdmin() error
 
+	// chat
 	CreateChat(requestingUserID int, chatName string) (int, error)
-	UpdateChat(requestingUserID int, chatID int, chatName string) (*types.Chat, error)
 	IsUserInChat(userID int, chatID int) (bool, error)
-	DeleteChat(requestingUserID int, chatID int) error
-	BombChat(requestingUserID int, chatID int) error
+	GetChatIDsForChannels() ([]int, error)
+	GetChatPreview(requestingUserID int) (*[]types.ChatPreview, error)
+	UpdateChat(requestingUserID int, chatID int, chatName string) (*types.Chat, error)
 	GetChatByID(requestingUserID int, chatID int) (*types.Chat, error)
 	GetChat(requestingUserID int) (*[]types.Chat, error)
-	GetSuggestedUsers(requestingUserID int) (*[]types.User, error)
 	SearchChatByName(requestingUserID int, chatName string) (*[]types.Chat, error)
-	AddChatUser(requestingUserID int, chatID int, userID int) (int, error)
-	DeleteChatUser(requestingUserID int, chatID int, userID int) error
-	GetChatUser(requestingUserID int, chatID int) (*[]types.User, error)
-	DeleteChatUserByUserID(userID int) error
-	GetChatUserByUserID(requestingUserID int, chatID int, userID int) (int, error)
-	SearchForNewUsers(requestingUserID int, chatID int, search_term string) (*[]types.User, error)
-	GetChatIDsForChannels() ([]int, error)
+	BombChat(requestingUserID int, chatID int) error
+	DeleteChat(requestingUserID int, chatID int) error
 
+	// chatUser
+	AddChatUser(requestingUserID int, chatID int, userID int) (int, error)
+	GetChatUser(requestingUserID int, chatID int) (*[]types.User, error)
+	GetChatUserByUserID(requestingUserID int, chatID int, userID int) (int, error)
+	GetSuggestedUsers(requestingUserID int) (*[]types.User, error)
+	SearchForNewUsers(requestingUserID int, chatID int, search_term string) (*[]types.User, error)
+	DeleteChatUserByUserID(userID int) error
+	DeleteChatUser(requestingUserID int, chatID int, userID int) error
+
+	// message
 	CreateMessage(requestingUserID int, chatID int, text string, files []types.NewFile) (int, error)
+	GetMessageByID(requestingUserID int, chatID int, messageID int) (*types.ChannelMessage, error)
+	GetMessagesByChatID(requestingUserID int, chatID int) (*[]types.ChannelMessage, error)
+	DeleteMessageByUserID(userID int) error
+
+	// file
 	GetFile(requestingUserID int, chatID int, fileID int) (*types.File, error)
 	StorageUsedBytes() (int64, error)
-	GetMessagesByChatID(requestingUserID int, chatID int) (*[]types.ChannelMessage, error)
-	GetMessageByID(requestingUserID int, chatID int, messageID int) (*types.ChannelMessage, error)
-	GetChatPreview(requestingUserID int) (*[]types.ChatPreview, error)
-	DeleteMessageByUserID(userID int) error
 }
 
 type Service struct {
@@ -54,176 +59,3 @@ func NewService(repo Repo) *Service {
 	return &Service{repo: repo}
 }
 
-// User
-func (s *Service) CreateUser(username string, password string) (int, error) {
-	if len(username) < 2 || len(username) > 24 {
-		return -1, errors.New("Username must be betwee 2 and 24 characters.")
-	}
-	if len(password) < 5 || len(password) > 64 {
-		return -1, errors.New("Password must be between 5 and 64 characters.")
-	}
-	return s.repo.CreateUser(username, password)
-}
-
-func (s *Service) CheckPassword(username string, password string) (int, error) {
-	if len(username) < 2 || len(username) > 24 || len(password) < 5 || len(password) > 64 {
-		return -1, errors.New("username or password is incorrect")
-	}
-	return s.repo.CheckPassword(username, password)
-}
-
-func (s *Service) ChangePassword(username string, old_password string, new_password string) error {
-	if len(new_password) < 5 || len(new_password) > 64 {
-		return errors.New("New password must be between 5 and 64 characters.")
-	}
-	return s.repo.ChangePassword(username, old_password, new_password)
-}
-
-func (s *Service) UserExists(username string) (bool, error) {
-	if len(username) < 2 || len(username) > 24 {
-		return false, errors.New("Usernames must be between 2 and 24 characters long.")
-	}
-	return s.repo.UserExists(username)
-}
-
-func (s *Service) GetUserByID(userID int) (*types.User, error) {
-	return s.repo.GetUserByID(userID)
-}
-func (s *Service) GetUserByUsername(username string) (*types.User, error) {
-	return s.repo.GetUserByUsername(username)
-}
-func (s *Service) GetUsers() (*[]types.User, error) {
-	return s.repo.GetUsers()
-}
-func (s *Service) SearchUsers(username string) (*[]types.User, error) {
-	return s.repo.SearchUsers(username)
-}
-func (s *Service) DeleteUser(userID int) error {
-	return s.repo.DeleteUser(userID)
-}
-func (s *Service) EnsureAdmin() error {
-	return s.repo.EnsureAdmin()
-}
-
-// Chat
-func (s *Service) CreateChat(requestingUserID int, chatName string) (int, error) {
-	if len(chatName) < 1 || len(chatName) > 32 {
-		return -1, errors.New("Chat name must be between 1 and 32 characters.")
-	}
-	return s.repo.CreateChat(requestingUserID, chatName)
-}
-
-func (s *Service) UpdateChat(requestingUserID int, chatID int, chatName string) (*types.Chat, error) {
-	if len(chatName) < 1 || len(chatName) > 32 {
-		return nil, errors.New("Chat name must be between 1 and 32 characters.")
-	}
-	return s.repo.UpdateChat(requestingUserID, chatID, chatName)
-}
-
-func (s *Service) IsUserInChat(userID int, chatID int) (bool, error) {
-	return s.repo.IsUserInChat(userID, chatID)
-}
-func (s *Service) DeleteChat(requestingUserID int, chatID int) error {
-	return s.repo.DeleteChat(requestingUserID, chatID)
-}
-func (s *Service) BombChat(requestingUserID int, chatID int) error {
-	return s.repo.BombChat(requestingUserID, chatID)
-}
-func (s *Service) GetChatByID(requestingUserID int, chatID int) (*types.Chat, error) {
-	return s.repo.GetChatByID(requestingUserID, chatID)
-}
-func (s *Service) GetChat(requestingUserID int) (*[]types.Chat, error) {
-	return s.repo.GetChat(requestingUserID)
-}
-func (s *Service) GetSuggestedUsers(requestingUserID int) (*[]types.User, error) {
-	return s.repo.GetSuggestedUsers(requestingUserID)
-}
-func (s *Service) SearchChatByName(requestingUserID int, chatName string) (*[]types.Chat, error) {
-	return s.repo.SearchChatByName(requestingUserID, chatName)
-}
-func (s *Service) AddChatUser(requestingUserID int, chatID int, userID int) (int, error) {
-	return s.repo.AddChatUser(requestingUserID, chatID, userID)
-}
-func (s *Service) DeleteChatUser(requestingUserID int, chatID int, userID int) error {
-	return s.repo.DeleteChatUser(requestingUserID, chatID, userID)
-}
-func (s *Service) GetChatUser(requestingUserID int, chatID int) (*[]types.User, error) {
-	return s.repo.GetChatUser(requestingUserID, chatID)
-}
-func (s *Service) DeleteChatUserByUserID(userID int) error {
-	return s.repo.DeleteChatUserByUserID(userID)
-}
-func (s *Service) GetChatUserByUserID(requestingUserID int, chatID int, userID int) (int, error) {
-	return s.repo.GetChatUserByUserID(requestingUserID, chatID, userID)
-}
-
-func (s *Service) SearchForNewUsers(requestingUserID int, chatID int, search_term string) (*[]types.User, error) {
-	if len(search_term) > 24 {
-		return &[]types.User{}, nil
-	}
-	return s.repo.SearchForNewUsers(requestingUserID, chatID, search_term)
-}
-
-func (s *Service) GetChatIDsForChannels() ([]int, error) {
-	return s.repo.GetChatIDsForChannels()
-}
-
-// Message
-func (s *Service) CreateMessage(requestingUserID int, chatID int, text string, files []types.NewFile) (int, error) {
-	// A message needs to carry something, but photos count - a
-	// photo-only message with no caption is valid.
-	if strings.TrimSpace(text) == "" && len(files) == 0 {
-		return -1, errors.New("Message must contain text or at least one photo.")
-	}
-	if len(text) > 1024 {
-		return -1, errors.New("Message must be less than 1024 characters.")
-	}
-	if len(files) > types.MaxFilesPerMessage {
-		return -1, fmt.Errorf("You can attach at most %d photos.", types.MaxFilesPerMessage)
-	}
-
-	var uploadBytes int64
-	for _, f := range files {
-		if len(f.Content) == 0 {
-			return -1, errors.New("Empty file.")
-		}
-		if len(f.Content) > types.MaxFileBytes {
-			return -1, fmt.Errorf("Photos must be smaller than %dMB.", types.MaxFileBytes>>20)
-		}
-		if !types.AllowedImageMimeTypes[f.MimeType] {
-			return -1, errors.New("Only JPEG, PNG, GIF and WebP images are allowed.")
-		}
-		uploadBytes += int64(len(f.Content))
-	}
-
-	// Attachments live in the in-memory database for the life of the
-	// process, so refuse politely near the ceiling instead of letting
-	// SQLite run out of memory and take every other query down with it.
-	if uploadBytes > 0 {
-		used, err := s.repo.StorageUsedBytes()
-		if err != nil {
-			return -1, err
-		}
-		if used+uploadBytes > types.StorageBudgetBytes {
-			return -1, errors.New("Photo storage is full. Bomb a chat to free space.")
-		}
-	}
-
-	return s.repo.CreateMessage(requestingUserID, chatID, text, files)
-}
-
-func (s *Service) GetFile(requestingUserID int, chatID int, fileID int) (*types.File, error) {
-	return s.repo.GetFile(requestingUserID, chatID, fileID)
-}
-func (s *Service) GetMessagesByChatID(requestingUserID int, chatID int) (*[]types.ChannelMessage, error) {
-	return s.repo.GetMessagesByChatID(requestingUserID, chatID)
-}
-func (s *Service) GetMessageByID(requestingUserID int, chatID int, messageID int) (*types.ChannelMessage, error) {
-	return s.repo.GetMessageByID(requestingUserID, chatID, messageID)
-}
-func (s *Service) GetChatPreview(requestingUserID int) (*[]types.ChatPreview, error) {
-	return s.repo.GetChatPreview(requestingUserID)
-}
-func (s *Service) DeleteMessageByUserID(userID int) error {
-	return s.repo.DeleteMessageByUserID(userID)
-}
