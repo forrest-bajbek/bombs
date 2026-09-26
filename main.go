@@ -4,13 +4,19 @@ import (
 	"context"
 	"database/sql"
 	"embed"
+	"errors"
 	"fmt"
 	"log"
+	"log/slog"
+	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/forrest-bajbek/bombs/handlers"
 	"github.com/forrest-bajbek/bombs/hub"
-	"github.com/forrest-bajbek/bombs/server"
+	"github.com/forrest-bajbek/bombs/router"
 	"github.com/forrest-bajbek/bombs/services"
 	"github.com/forrest-bajbek/bombs/sqlite"
 	"github.com/forrest-bajbek/bombs/token"
@@ -89,10 +95,43 @@ func main() {
 	// Handlers
 	handler := handlers.NewHandler(service, tokenMaker, messageHub)
 
-	// Server contains routing logic
-	s := server.NewServer(handler, service, tokenMaker)
+	// Router
+	router := router.NewRouter(handler, service, tokenMaker)
 
-	if err := s.ListenAndServe(":9000"); err != nil {
+	// CSRF Protection
+	csrfProtection := http.NewCrossOriginProtection()
+	if err := csrfProtection.AddTrustedOrigin("http://0.0.0.0:9000"); err != nil {
+		slog.Error("failed to add trusted origin", slog.Any("error", err))
+		os.Exit(1)
+	}
+
+	// Server (with graceful shutdown)
+	// https://github.com/go-chi/chi/blob/3b50c7cc35ff25f384202409733c3332c150e0ec/_examples/graceful/main.go
+	// --------------------------------------------------------------------------------
+	// The HTTP Server
+	server := &http.Server{Addr: "0.0.0.0:9000", Handler: csrfProtection.Handler(router.Mux())}
+
+	// Create context that listens for the interrupt signal
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	// Run server in the background
+	go func() {
+		slog.Info("Server starting on :9000")
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatal(err)
+		}
+	}()
+
+	// Listen for the interrupt signal
+	<-ctx.Done()
+
+	// Create shutdown context with 30-second timeout
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	// Trigger graceful shutdown
+	if err := server.Shutdown(shutdownCtx); err != nil {
 		log.Fatal(err)
 	}
 }
