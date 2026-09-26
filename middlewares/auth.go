@@ -3,12 +3,12 @@ package middlewares
 import (
 	"context"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/forrest-bajbek/bombs/services"
 	"github.com/forrest-bajbek/bombs/token"
 	"github.com/forrest-bajbek/bombs/types"
-	"github.com/forrest-bajbek/bombs/utils"
 )
 
 const AuthUserID = "middleware.auth.userID"
@@ -62,8 +62,9 @@ func IsAuthenticated(service *services.Service, tokenMaker *token.JWTMaker, next
 			Value:    authToken,
 			Path:     "/",
 			Expires:  time.Now().Add(15 * time.Minute),
+			MaxAge:   int(time.Now().Add(15 * time.Minute).Unix()),
 			HttpOnly: true,
-			Secure:   utils.IsHTTPS(r),
+			Secure:   os.Getenv("ENV") == "PROD",
 			SameSite: http.SameSiteStrictMode,
 		}
 		http.SetCookie(w, cookie)
