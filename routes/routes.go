@@ -4,7 +4,12 @@
 // redirect) are prefixed with "partial.".
 package routes
 
-import "github.com/alehano/reverse"
+import (
+	"net/url"
+	"strings"
+
+	"github.com/alehano/reverse"
+)
 
 const (
 	Health = "health"
@@ -127,4 +132,37 @@ func Pattern(name string) string {
 // URL(ChatPage, "42") -> "/chat/42".
 func URL(name string, params ...string) string {
 	return reverse.Rev(name, params...)
+}
+
+// LoginURL returns the login page path, carrying next as a ?next= query
+// parameter when it is a safe local path (see SafeNext).
+func LoginURL(next string) string {
+	loginURL := URL(LoginPage)
+	if next = SafeNext(next); next != "" {
+		loginURL += "?next=" + url.QueryEscape(next)
+	}
+	return loginURL
+}
+
+// SafeNext returns next if it is a local path that is safe to redirect to
+// after login, and "" otherwise. It rejects anything that could send the
+// browser off-site (e.g. "//evil.com", "/\evil.com", "https://evil.com")
+// as well as the login page itself, to avoid a redirect loop.
+func SafeNext(next string) string {
+	if !strings.HasPrefix(next, "/") || strings.HasPrefix(next, "//") || strings.Contains(next, "\\") {
+		return ""
+	}
+	for _, c := range next {
+		if c < 0x20 || c == 0x7f {
+			return ""
+		}
+	}
+	u, err := url.Parse(next)
+	if err != nil || u.Scheme != "" || u.Host != "" {
+		return ""
+	}
+	if u.Path == URL(LoginPage) {
+		return ""
+	}
+	return next
 }
