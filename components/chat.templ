@@ -252,6 +252,11 @@ templ ChatPage(chat *types.Chat) {
     .lightbox-nav:hover { background: rgba(10, 10, 10, 0.8); }
     .lightbox-nav.is-prev { left: 1rem; }
     .lightbox-nav.is-next { right: 1rem; }
+
+    body.is-dragging-files .chat-input-bar {
+      outline: 2px dashed #485fc7;
+      outline-offset: -4px;
+    }
   </style>
 
 			// Nav
@@ -281,5 +286,58 @@ templ ChatPage(chat *types.Chat) {
 
 			// Input Bar
 			@MessageInputBar(chat.ID, "")
+			<script>
+				// Shows how many photos are queued on the input bar's file picker.
+				function updateFileCount(input) {
+					input.closest('.file').querySelector('.file-count').textContent = input.files.length ? input.files.length + ' 📷' : '';
+				}
+
+				// Appends images to the input bar's file picker so they upload
+				// exactly as if picked with 📎. Returns whether anything was attached.
+				// The input is looked up live because the form is re-rendered after
+				// every send.
+				function attachImages(files) {
+					const input = document.querySelector('.chat-input-bar input[name="files"]');
+					const allowed = input.accept.split(',');
+					const images = Array.from(files).filter(f => allowed.includes(f.type));
+					if (!images.length) return false;
+
+					const dt = new DataTransfer();
+					for (const f of input.files) dt.items.add(f);
+					images.forEach((f, i) => {
+						// The server drops parts with an empty filename, so give nameless
+						// images one.
+						if (!f.name) f = new File([f], 'pasted-' + i + '.' + f.type.split('/')[1], { type: f.type });
+						dt.items.add(f);
+					});
+					input.files = dt.files;
+					updateFileCount(input);
+					return true;
+				}
+
+				// Plain text pastes fall through.
+				function attachPastedImages(form, event) {
+					if (attachImages(event.clipboardData?.files || [])) event.preventDefault();
+				}
+
+				// Drag and drop photos anywhere on the page. Registered on document so
+				// the listeners survive form re-renders.
+				const hasFiles = e => e.dataTransfer?.types.includes('Files');
+				document.addEventListener('dragenter', e => {
+					if (hasFiles(e)) document.body.classList.add('is-dragging-files');
+				});
+				document.addEventListener('dragover', e => {
+					if (hasFiles(e)) e.preventDefault();
+				});
+				document.addEventListener('dragleave', e => {
+					if (e.relatedTarget === null) document.body.classList.remove('is-dragging-files');
+				});
+				document.addEventListener('drop', e => {
+					if (!hasFiles(e)) return;
+					e.preventDefault();
+					document.body.classList.remove('is-dragging-files');
+					attachImages(e.dataTransfer.files);
+				});
+			</script>
 	}
 }

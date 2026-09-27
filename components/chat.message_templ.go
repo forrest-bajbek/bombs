@@ -588,7 +588,7 @@ func MessageInputBar(chatID int, errorMessage string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "\" hx-encoding=\"multipart/form-data\" hx-target=\"this\" hx-swap=\"outerHTML\" hx-disabled-elt=\"find button[type='submit']\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "\" hx-encoding=\"multipart/form-data\" hx-target=\"this\" hx-swap=\"outerHTML\" hx-disabled-elt=\"find button[type='submit']\" onpaste=\"attachPastedImages(this, event)\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -600,7 +600,7 @@ func MessageInputBar(chatID int, errorMessage string) templ.Component {
 			var templ_7745c5c3_Var30 string
 			templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(errorMessage)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/chat.message.templ`, Line: 188, Col: 45}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/chat.message.templ`, Line: 189, Col: 45}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 			if templ_7745c5c3_Err != nil {
@@ -611,7 +611,7 @@ func MessageInputBar(chatID int, errorMessage string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "<div class=\"field has-addons is-fullwidth\"><div class=\"control\"><div class=\"file is-small\"><label class=\"file-label\"><input class=\"file-input\" type=\"file\" name=\"files\" multiple accept=\"image/jpeg,image/png,image/gif,image/webp\" onchange=\"this.closest('.file').querySelector('.file-count').textContent = this.files.length ? this.files.length + ' 📷' : ''\"> <span class=\"file-cta\"><span class=\"file-label\">📎</span></span> <span class=\"file-count\"></span></label></div></div><div class=\"control is-expanded\"><input class=\"input\" id=\"messageInput\" name=\"text\" type=\"text\" placeholder=\"Type a message…\" autocomplete=\"off\" maxlength=\"1024\"></div><div class=\"control\"><button class=\"button is-primary\" type=\"submit\">Send</button></div></div></form>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "<div class=\"field has-addons is-fullwidth\"><div class=\"control\"><div class=\"file is-small\"><label class=\"file-label\"><input class=\"file-input\" type=\"file\" name=\"files\" multiple accept=\"image/jpeg,image/png,image/gif,image/webp\" onchange=\"updateFileCount(this)\"> <span class=\"file-cta\"><span class=\"file-label\">📎</span></span> <span class=\"file-count\"></span></label></div></div><div class=\"control is-expanded\"><input class=\"input\" id=\"messageInput\" name=\"text\" type=\"text\" placeholder=\"Type a message…\" autocomplete=\"off\" maxlength=\"1024\"></div><div class=\"control\"><button class=\"button is-primary\" type=\"submit\">Send</button></div></div></form>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
