@@ -3,10 +3,9 @@ package handlers
 import (
 	"context"
 	"net/http"
-	"os"
-	"time"
 
 	"github.com/forrest-bajbek/bombs/components"
+	"github.com/forrest-bajbek/bombs/middlewares"
 	"github.com/forrest-bajbek/bombs/routes"
 )
 
@@ -40,17 +39,7 @@ func (h *Handler) LogIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cookie := &http.Cookie{
-		Name:     "authToken",
-		Value:    authToken,
-		Path:     "/",
-		Expires:  time.Now().Add(15 * time.Minute),
-		MaxAge:   int(time.Now().Add(15 * time.Minute).Unix()),
-		HttpOnly: true,
-		Secure:   os.Getenv("ENV") == "PROD",
-		SameSite: http.SameSiteStrictMode,
-	}
-	http.SetCookie(w, cookie)
+	middlewares.SetAuthCookies(w, authToken)
 	if next == "" {
 		next = routes.URL(routes.Home)
 	}
@@ -58,14 +47,6 @@ func (h *Handler) LogIn(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) LogOut(w http.ResponseWriter, r *http.Request) {
-	cookie := &http.Cookie{
-		Name:     "authToken",
-		Value:    "",
-		Path:     "/",             // need this
-		Expires:  time.Unix(0, 0), // legacy support
-		MaxAge:   -1,
-		HttpOnly: true,
-	}
-	http.SetCookie(w, cookie)
+	middlewares.ClearAuthCookies(w)
 	http.Redirect(w, r, routes.URL(routes.LoginPage), http.StatusFound)
 }

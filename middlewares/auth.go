@@ -16,21 +16,60 @@ import (
 const AuthUserID = "middleware.auth.userID"
 const AuthUser = "middleware.auth.user"
 
+// authSessionCookie mirrors authToken's lifetime but is readable by page JS,
+// which can't see the HttpOnly authToken. It carries nothing secret; the
+// page watches for it to disappear and reloads once the session is gone.
+const authSessionCookie = "authSession"
+
+// SetAuthCookies issues authToken and its authSession companion, both
+// expiring after token.AuthTokenTTL.
+func SetAuthCookies(w http.ResponseWriter, authToken string) {
+	maxAge := int(token.AuthTokenTTL.Seconds())
+	expires := time.Now().Add(token.AuthTokenTTL)
+	secure := os.Getenv("ENV") == "PROD"
+	http.SetCookie(w, &http.Cookie{
+		Name:     "authToken",
+		Value:    authToken,
+		Path:     "/",
+		Expires:  expires,
+		MaxAge:   maxAge,
+		HttpOnly: true,
+		Secure:   secure,
+		SameSite: http.SameSiteStrictMode,
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name:     authSessionCookie,
+		Value:    "1",
+		Path:     "/",
+		Expires:  expires,
+		MaxAge:   maxAge,
+		Secure:   secure,
+		SameSite: http.SameSiteStrictMode,
+	})
+}
+
+// ClearAuthCookies removes authToken and authSession.
+func ClearAuthCookies(w http.ResponseWriter) {
+	for _, name := range []string{"authToken", authSessionCookie} {
+		http.SetCookie(w, &http.Cookie{
+			Name:    name,
+			Value:   "",
+			Path:    "/",
+			Expires: time.Unix(0, 0), // legacy support
+			MaxAge:  -1,
+		})
+	}
+}
+
 func writeUnauthed(w http.ResponseWriter) {
 	w.WriteHeader(http.StatusUnauthorized)
 	w.Write([]byte(http.StatusText(http.StatusUnauthorized)))
 }
 
-// redirectToLogin clears the auth cookie and sends the client to the login
+// redirectToLogin clears the auth cookies and sends the client to the login
 // page, carrying the page they were on as ?next= where that makes sense.
 func redirectToLogin(w http.ResponseWriter, r *http.Request) {
-	cookie := &http.Cookie{
-		Name:   "authToken",
-		Value:  "",
-		Path:   "/",
-		MaxAge: -1,
-	}
-	http.SetCookie(w, cookie)
+	ClearAuthCookies(w)
 
 	// htmx would follow a 302 and swap the login page into the fragment
 	// target, so ask it for a full-page navigation instead. next is the
@@ -79,17 +118,7 @@ func IsAuthenticated(service *services.Service, tokenMaker *token.JWTMaker, next
 			http.Error(w, err.Error(), 500)
 			return
 		}
-		cookie := &http.Cookie{
-			Name:     "authToken",
-			Value:    authToken,
-			Path:     "/",
-			Expires:  time.Now().Add(15 * time.Minute),
-			MaxAge:   int(time.Now().Add(15 * time.Minute).Unix()),
-			HttpOnly: true,
-			Secure:   os.Getenv("ENV") == "PROD",
-			SameSite: http.SameSiteStrictMode,
-		}
-		http.SetCookie(w, cookie)
+		SetAuthCookies(w, authToken)
 
 		// log.Printf("++ Auth: Writing user struct to request context.")
 		ctx := context.WithValue(r.Context(), AuthUser, user)

@@ -14,6 +14,19 @@ templ BasePage(title string) {
 			// Must load after htmx core. Drives the live message stream on the chat page.
 			<script src="https://cdn.jsdelivr.net/npm/htmx-ext-sse@2.2.3/sse.js" integrity="sha384-fw+eTlCc7suMV/1w/7fr2/PmwElUIt5i82bi+qTiLXvjRXZ2/FkiTNA/w0MhXnGI" crossorigin="anonymous"></script>
 			<title>{ title }</title>
+			<script>
+				// Reloads the page once the session cookie disappears (expired or logged
+				// out in another tab), so authenticated content doesn't linger on screen.
+				// The server then redirects to login with ?next= pointing back here.
+				(() => {
+					const hasSession = () => document.cookie.split('; ').some(c => c.startsWith('authSession='));
+					if (!hasSession()) return; // public page (login, create user)
+					const check = () => { if (!hasSession()) location.reload(); };
+					setInterval(check, 15000);
+					document.addEventListener('visibilitychange', check);
+					window.addEventListener('pageshow', check); // back/forward cache restores
+				})();
+			</script>
 		</head>
 		<body>
 			{ children... }
