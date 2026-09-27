@@ -183,6 +183,7 @@ templ MessageInputBar(chatID int, errorMessage string) {
 		hx-target="this"
 		hx-swap="outerHTML"
 		hx-disabled-elt="find button[type='submit']"
+		onpaste="attachPastedImages(this, event)"
 	>
 		if errorMessage != "" {
 			<p class="chat-input-error">{ errorMessage }</p>
@@ -197,7 +198,7 @@ templ MessageInputBar(chatID int, errorMessage string) {
 							name="files"
 							multiple
 							accept="image/jpeg,image/png,image/gif,image/webp"
-							onchange="this.closest('.file').querySelector('.file-count').textContent = this.files.length ? this.files.length + ' 📷' : ''"
+							onchange="updateFileCount(this)"
 						/>
 						<span class="file-cta">
 							<span class="file-label">📎</span>
