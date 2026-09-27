@@ -111,11 +111,6 @@ func (h *Handler) UserCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cookie := &http.Cookie{
-		Name:   "authToken",
-		Value:  "",
-		MaxAge: -1,
-	}
-	http.SetCookie(w, cookie)
+	middlewares.ClearAuthCookies(w)
 	http.Redirect(w, r, routes.URL(routes.LoginPage), http.StatusFound)
 }

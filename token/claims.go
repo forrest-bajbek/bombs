@@ -26,6 +26,10 @@ func NewInviteTokenClaims(username string) *InviteClaims {
 	}
 }
 
+// AuthTokenTTL is how long an auth session lasts without activity. Each
+// authenticated request re-issues the token for another AuthTokenTTL.
+const AuthTokenTTL = 15 * time.Minute
+
 type AuthClaims struct {
 	UserID string
 	jwt.RegisteredClaims
@@ -40,7 +44,7 @@ func NewAuthTokenClaims(userID int) *AuthClaims {
 			Audience:  jwt.ClaimStrings{"auth"},
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			NotBefore: jwt.NewNumericDate(time.Now()),
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Duration(15) * time.Minute)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(AuthTokenTTL)),
 		},
 	}
 }
