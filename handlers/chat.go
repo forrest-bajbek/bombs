@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/forrest-bajbek/bombs/components"
+	"github.com/forrest-bajbek/bombs/hub"
 	"github.com/forrest-bajbek/bombs/middlewares"
 	"github.com/forrest-bajbek/bombs/routes"
 	"github.com/forrest-bajbek/bombs/types"
@@ -53,6 +54,33 @@ func (h *Handler) ChatPage(w http.ResponseWriter, r *http.Request) {
 
 	component := components.ChatPage(chat)
 	component.Render(context.Background(), w)
+}
+
+// ChatTyping records a keystroke in the message input. The hub decides
+// whether that changes who is shown as typing.
+func (h *Handler) ChatTyping(w http.ResponseWriter, r *http.Request) {
+	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
+	if !ok {
+		http.Redirect(w, r, routes.URL(routes.LoginPage), http.StatusFound)
+		return
+	}
+	chatID, err := pathInt(r, "chat_id")
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	inChat, err := h.service.IsUserInChat(requestingUser.ID, chatID)
+	if err != nil || !inChat {
+		http.NotFound(w, r)
+		return
+	}
+
+	h.messageHub.Typing <- hub.TypingSignal{
+		ChatID:   chatID,
+		UserID:   requestingUser.ID,
+		Username: requestingUser.Username,
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // parseMessageUpload streams the multipart body rather than calling
@@ -244,6 +272,24 @@ func writeMessage(w io.Writer, m types.ChannelMessage, requestingUserID int) err
 	return writeSSEEvent(w, event, id, buf.Bytes())
 }
 
+// writeTyping renders the typing line for one recipient, leaving them out
+// of their own indicator. It carries no id, so it never touches the
+// Last-Event-ID used to replay messages.
+func writeTyping(w io.Writer, status *hub.TypingStatus, requestingUserID int) error {
+	var names []string
+	for _, t := range status.Typists {
+		if t.UserID != requestingUserID {
+			names = append(names, t.Username)
+		}
+	}
+
+	var buf bytes.Buffer
+	if err := components.TypingStatus(names).Render(context.Background(), &buf); err != nil {
+		return err
+	}
+	return writeSSEEvent(w, "typing", 0, buf.Bytes())
+}
+
 func (h *Handler) MessageEvents(w http.ResponseWriter, r *http.Request) {
 	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
 	if !ok {
@@ -311,11 +357,17 @@ func (h *Handler) MessageEvents(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-		case m, open := <-clientChannel:
+		case event, open := <-clientChannel:
 			if !open {
 				return
 			}
-			if err := writeMessage(w, m, requestingUser.ID); err != nil {
+			switch {
+			case event.Message != nil:
+				err = writeMessage(w, *event.Message, requestingUser.ID)
+			case event.Typing != nil:
+				err = writeTyping(w, event.Typing, requestingUser.ID)
+			}
+			if err != nil {
 				return
 			}
 			if err := rc.Flush(); err != nil {

@@ -82,6 +82,7 @@ func (s *Router) Mux() http.Handler {
 		mux.Post(routes.Pattern(routes.ChatCreate), s.handler.ChatCreate)
 
 		mux.Get(routes.Pattern(routes.ChatPage), s.handler.ChatPage)
+		mux.Post(routes.Pattern(routes.ChatTyping), s.handler.ChatTyping)
 		mux.Post(routes.Pattern(routes.ChatMessageCreate), s.handler.MessageCreate)
 		mux.Get(routes.Pattern(routes.ChatMessageEvents), s.handler.MessageEvents)
 		mux.Get(routes.Pattern(routes.ChatFile), s.handler.ChatFile)

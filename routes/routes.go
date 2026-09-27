@@ -35,6 +35,7 @@ const (
 	ChatCreatePage = "chat.create.page"
 	ChatCreate     = "chat.create"
 	ChatPage       = "chat.page"
+	ChatTyping     = "chat.typing"
 
 	ChatMessageCreate = "chat.message.create"
 	ChatMessageEvents = "chat.message.events"
@@ -96,6 +97,7 @@ func Register() {
 	reverse.Add(ChatCreatePage, "/chat/create")
 	reverse.Add(ChatCreate, "/chat/create")
 	reverse.Add(ChatPage, "/chat/"+chatIDParam, chatIDParam)
+	reverse.Add(ChatTyping, "/chat/"+chatIDParam+"/typing", chatIDParam)
 
 	reverse.Add(ChatMessageCreate, "/chat/"+chatIDParam+"/message/create", chatIDParam)
 	reverse.Add(ChatMessageEvents, "/chat/"+chatIDParam+"/message/events", chatIDParam)
