@@ -253,6 +253,21 @@ templ ChatPage(chat *types.Chat) {
     .lightbox-nav.is-prev { left: 1rem; }
     .lightbox-nav.is-next { right: 1rem; }
 
+    /* Overlays the message area's bottom padding, so showing it never
+       shifts the conversation. */
+    .chat-typing {
+      position: fixed;
+      bottom: var(--input-height);
+      left: 0;
+      right: 0;
+      padding: 0.25rem 1.5rem;
+      font-size: 0.75rem;
+      font-style: italic;
+      color: #888;
+      background: #0F0F0F;
+      z-index: 100;
+    }
+
     body.is-dragging-files .chat-input-bar {
       outline: 2px dashed #485fc7;
       outline-offset: -4px;
@@ -273,12 +288,17 @@ templ ChatPage(chat *types.Chat) {
 			<div hx-ext="sse" sse-connect={ linkToSSE(chat.ID) }>
 				<div hidden sse-swap="newMessage" hx-target="#chatMessages" hx-swap="beforeend"></div>
 				<div hidden sse-swap="bomb" hx-target="#chatMessages" hx-swap="innerHTML"></div>
+				<div hidden sse-swap="typing" hx-target="#typingStatus" hx-swap="outerHTML"></div>
 			</div>
 
 			// Messages
 			<div class="chat-messages" hx-on::after-swap="this.scrollTop = this.scrollHeight">
 				<div class="chat-messages-inner" id="chatMessages"></div>
 			</div>
+
+			// Who else is typing. Outside .chat-messages for the same reason as
+			// the receivers above: a bomb would otherwise delete it.
+			@TypingStatus(nil)
 
 			// Attachment modal target. A sibling of .chat-messages so that
 			// bombing the chat can't tear the open modal out of the DOM.
@@ -337,6 +357,45 @@ templ ChatPage(chat *types.Chat) {
 					e.preventDefault();
 					document.body.classList.remove('is-dragging-files');
 					attachImages(e.dataTransfer.files);
+				});
+
+				// Tells the server this user is typing: one ping on the first key,
+				// then at most one trailing ping per second while keys keep coming.
+				// The server drops a typist 3s after their last ping. Registered on
+				// document so it survives the input bar being re-rendered.
+				const TYPING_THROTTLE_MS = 1000;
+				let typingThrottle = null;
+				let typingPending = false;
+				function sendTyping() {
+					const input = document.getElementById('messageInput');
+					if (input) fetch(input.dataset.typingUrl, { method: 'POST' });
+				}
+				function startTypingWindow() {
+					typingThrottle = setTimeout(() => {
+						typingThrottle = null;
+						if (typingPending) {
+							typingPending = false;
+							sendTyping();
+							startTypingWindow();
+						}
+					}, TYPING_THROTTLE_MS);
+				}
+				document.addEventListener('keydown', e => {
+					if (e.target.id !== 'messageInput') return;
+					// Enter sends the message, which clears this user's typing on the
+					// server; a ping now would mark them typing again.
+					if (e.key.length !== 1 && e.key !== 'Backspace' && e.key !== 'Delete') return;
+					if (typingThrottle) {
+						typingPending = true;
+						return;
+					}
+					sendTyping();
+					startTypingWindow();
+				});
+				document.addEventListener('submit', () => {
+					clearTimeout(typingThrottle);
+					typingThrottle = null;
+					typingPending = false;
 				});
 			</script>
 	}

@@ -13,6 +13,18 @@ func messageFilesURL(chatID int, messageID int, index int) string {
 	return routes.URL(routes.PartialChatMessageFiles, strconv.Itoa(chatID), strconv.Itoa(messageID)) + "?i=" + strconv.Itoa(index)
 }
 
+func typingURL(chatID int) string {
+	return routes.URL(routes.ChatTyping, strconv.Itoa(chatID))
+}
+
+// typingText names a lone typist; any more than that are summarized.
+func typingText(names []string) string {
+	if len(names) == 1 {
+		return names[0] + " is typing..."
+	}
+	return "Two or more people are typing..."
+}
+
 func modalCloseURL(chatID int) string {
 	return routes.URL(routes.PartialChatModalClose, strconv.Itoa(chatID))
 }
@@ -119,6 +131,16 @@ templ ChatMessageBubble(m *types.ResponseMessage) {
 	</div>
 }
 
+// TypingStatus is rendered per recipient with that recipient already left
+// out of names, and replaces itself on every "typing" SSE event.
+templ TypingStatus(names []string) {
+	<div id="typingStatus" class="chat-typing" hidden?={ len(names) == 0 }>
+		if len(names) > 0 {
+			{ typingText(names) }
+		}
+	</div>
+}
+
 // PartialMessageFileModal shows one photo at a time. Prev/next re-fetch
 // this partial with a neighbouring index; at either end the button is
 // simply not rendered, so the arrow key bound to it does nothing. The
@@ -216,6 +238,7 @@ templ MessageInputBar(chatID int, errorMessage string) {
 					placeholder="Type a message…"
 					autocomplete="off"
 					maxlength="1024"
+					data-typing-url={ typingURL(chatID) }
 				/>
 			</div>
 			<div class="control">
