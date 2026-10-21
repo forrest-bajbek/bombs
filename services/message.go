@@ -8,7 +8,7 @@ import (
 	"github.com/forrest-bajbek/bombs/types"
 )
 
-func (s *Service) CreateMessage(requestingUserID int, chatID int, text string, files []types.NewFile) (int, error) {
+func (s *Service) CreateMessage(requestingUserID int, chatID int, text string, files []types.NewFile, replyToID int) (int, error) {
 	if strings.TrimSpace(text) == "" && len(files) == 0 {
 		return -1, errors.New("Message must contain text or at least one photo.")
 	}
@@ -43,7 +43,7 @@ func (s *Service) CreateMessage(requestingUserID int, chatID int, text string, f
 		}
 	}
 
-	return s.repo.CreateMessage(requestingUserID, chatID, text, files)
+	return s.repo.CreateMessage(requestingUserID, chatID, text, files, replyToID)
 }
 
 func (s *Service) GetMessageByID(requestingUserID int, chatID int, messageID int) (*types.ChannelMessage, error) {
@@ -56,4 +56,8 @@ func (s *Service) GetMessagesByChatID(requestingUserID int, chatID int) (*[]type
 
 func (s *Service) DeleteMessageByUserID(userID int) error {
 	return s.repo.DeleteMessageByUserID(userID)
+}
+
+func (s *Service) DeleteMessage(requestingUserID int, chatID int, messageID int) error {
+	return s.repo.DeleteMessage(requestingUserID, chatID, messageID)
 }

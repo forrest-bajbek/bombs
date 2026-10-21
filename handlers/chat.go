@@ -88,16 +88,17 @@ func (h *Handler) ChatTyping(w http.ResponseWriter, r *http.Request) {
 // temp files. This app keeps messages in memory and sets secure_delete
 // precisely so nothing lands on disk; writing photos to /tmp would quietly
 // undo that.
-func parseMessageUpload(w http.ResponseWriter, r *http.Request) (string, []types.NewFile, error) {
+func parseMessageUpload(w http.ResponseWriter, r *http.Request) (string, []types.NewFile, int, error) {
 	r.Body = http.MaxBytesReader(w, r.Body, types.MaxRequestBytes)
 
 	mr, err := r.MultipartReader()
 	if err != nil {
-		return "", nil, errors.New("Could not read message.")
+		return "", nil, 0, errors.New("Could not read message.")
 	}
 
 	var text string
 	var files []types.NewFile
+	var replyToID int
 
 	for {
 		part, err := mr.NextPart()
@@ -105,7 +106,7 @@ func parseMessageUpload(w http.ResponseWriter, r *http.Request) (string, []types
 			break
 		}
 		if err != nil {
-			return "", nil, errors.New("Upload was too large or could not be read.")
+			return "", nil, 0, errors.New("Upload was too large or could not be read.")
 		}
 
 		switch part.FormName() {
@@ -113,9 +114,18 @@ func parseMessageUpload(w http.ResponseWriter, r *http.Request) (string, []types
 			b, err := io.ReadAll(io.LimitReader(part, 4096))
 			part.Close()
 			if err != nil {
-				return "", nil, errors.New("Could not read message text.")
+				return "", nil, 0, errors.New("Could not read message text.")
 			}
 			text = string(b)
+
+		case "reply_to_id":
+			b, err := io.ReadAll(io.LimitReader(part, 32))
+			part.Close()
+			if err != nil {
+				return "", nil, 0, errors.New("Could not read reply.")
+			}
+			// Blank or garbled means no reply; the repo rejects ids outside this chat.
+			replyToID, _ = strconv.Atoi(strings.TrimSpace(string(b)))
 
 		case "files":
 			// A file picker the user never touched still submits a part,
@@ -126,21 +136,21 @@ func parseMessageUpload(w http.ResponseWriter, r *http.Request) (string, []types
 			}
 			if len(files) >= types.MaxFilesPerMessage {
 				part.Close()
-				return "", nil, fmt.Errorf("You can attach at most %d photos.", types.MaxFilesPerMessage)
+				return "", nil, 0, fmt.Errorf("You can attach at most %d photos.", types.MaxFilesPerMessage)
 			}
 			// One byte past the cap, so an oversized upload is caught
 			// without buffering the whole thing.
 			b, err := io.ReadAll(io.LimitReader(part, types.MaxFileBytes+1))
 			part.Close()
 			if err != nil {
-				return "", nil, errors.New("Could not read uploaded photo.")
+				return "", nil, 0, errors.New("Could not read uploaded photo.")
 			}
 			if len(b) == 0 {
 				continue
 			}
 			f, err := utils.ProcessUpload(b)
 			if err != nil {
-				return "", nil, err
+				return "", nil, 0, err
 			}
 			files = append(files, f)
 
@@ -149,7 +159,7 @@ func parseMessageUpload(w http.ResponseWriter, r *http.Request) (string, []types
 		}
 	}
 
-	return text, files, nil
+	return text, files, replyToID, nil
 }
 
 func (h *Handler) MessageCreate(w http.ResponseWriter, r *http.Request) {
@@ -171,7 +181,7 @@ func (h *Handler) MessageCreate(w http.ResponseWriter, r *http.Request) {
 		components.MessageInputBar(chatID, errorMessage).Render(context.Background(), w)
 	}
 
-	text, files, err := parseMessageUpload(w, r)
+	text, files, replyToID, err := parseMessageUpload(w, r)
 	if err != nil {
 		renderInputBar(err.Error())
 		return
@@ -198,7 +208,7 @@ func (h *Handler) MessageCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	messageID, err := h.service.CreateMessage(requestingUser.ID, chatID, text, files)
+	messageID, err := h.service.CreateMessage(requestingUser.ID, chatID, text, files, replyToID)
 	if err != nil {
 		renderInputBar(err.Error())
 		return
@@ -213,6 +223,39 @@ func (h *Handler) MessageCreate(w http.ResponseWriter, r *http.Request) {
 	// the hub to fan out to every other client.
 	renderInputBar("")
 	h.messageHub.Broadcast <- *newMessage
+}
+
+// MessageDelete blanks one of the requester's own messages and tells the
+// chat. Failures are 404 so message ids can't be probed.
+func (h *Handler) MessageDelete(w http.ResponseWriter, r *http.Request) {
+	requestingUser, ok := r.Context().Value(middlewares.AuthUser).(*types.User)
+	if !ok {
+		http.Redirect(w, r, routes.URL(routes.LoginPage), http.StatusFound)
+		return
+	}
+	chatID, err := pathInt(r, "chat_id")
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	messageID, err := pathInt(r, "message_id")
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	if err := h.service.DeleteMessage(requestingUser.ID, chatID, messageID); err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	deleted, err := h.service.GetMessageByID(requestingUser.ID, chatID, messageID)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+	h.messageHub.Deleted <- *deleted
 }
 
 // writeSSEEvent frames pre-rendered HTML as a single SSE event.
@@ -270,6 +313,21 @@ func writeMessage(w io.Writer, m types.ChannelMessage, requestingUserID int) err
 	}
 
 	return writeSSEEvent(w, event, id, buf.Bytes())
+}
+
+// writeDeleted sends the deleted message's new state as out-of-band swaps.
+// It carries no id, so it never touches the Last-Event-ID used for replay.
+func writeDeleted(w io.Writer, m types.ChannelMessage, requestingUserID int) error {
+	rm := types.ResponseMessage{
+		ChannelMessage: m,
+		IsSender:       m.UserID == requestingUserID,
+	}
+
+	var buf bytes.Buffer
+	if err := components.DeletedMessage(&rm).Render(context.Background(), &buf); err != nil {
+		return err
+	}
+	return writeSSEEvent(w, "messageDeleted", 0, buf.Bytes())
 }
 
 // writeTyping renders the typing line for one recipient, leaving them out

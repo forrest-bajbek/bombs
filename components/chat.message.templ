@@ -29,6 +29,26 @@ func modalCloseURL(chatID int) string {
 	return routes.URL(routes.PartialChatModalClose, strconv.Itoa(chatID))
 }
 
+func messageDOMID(messageID int) string {
+	return "msg-" + strconv.Itoa(messageID)
+}
+
+func replyTextClass(messageID int) string {
+	return "reply-text-" + strconv.Itoa(messageID)
+}
+
+func messageDeleteURL(chatID int, messageID int) string {
+	return routes.URL(routes.ChatMessageDelete, strconv.Itoa(chatID), strconv.Itoa(messageID))
+}
+
+// replyPreviewText falls back to a label for photo-only parents.
+func replyPreviewText(p *types.ReplyPreview) string {
+	if p.Text == "" && p.HasFiles {
+		return "📷 Photo"
+	}
+	return p.Text
+}
+
 func bubbleClass(isSender bool) string {
 	if isSender {
 		return "message is-sent"
@@ -119,9 +139,42 @@ templ MessageAttachments(m *types.ResponseMessage) {
 // MessageEvents render through here, so there is exactly one definition of
 // what a message looks like.
 templ ChatMessageBubble(m *types.ResponseMessage) {
-	<div class={ bubbleClass(m.IsSender) }>
+	@messageBubble(m, false)
+}
+
+// DeletedMessage is sent over SSE when a message is deleted. Both parts are
+// out-of-band swaps: the bubble replaces itself by id, and every reply
+// preview pointing at the message gets the new text.
+templ DeletedMessage(m *types.ResponseMessage) {
+	@messageBubble(m, true)
+	<span hx-swap-oob={ "innerHTML:." + replyTextClass(m.MessageID) }>{ m.Text }</span>
+}
+
+templ messageBubble(m *types.ResponseMessage, oob bool) {
+	<div
+		if m.MessageID > 0 {
+			id={ messageDOMID(m.MessageID) }
+			data-message-id={ strconv.Itoa(m.MessageID) }
+			data-delete-url={ messageDeleteURL(m.ChatID, m.MessageID) }
+		}
+		if oob {
+			hx-swap-oob="outerHTML"
+		}
+		data-sent?={ m.IsSender }
+		class={ bubbleClass(m.IsSender) }
+	>
 		<div class="message-body">
 			<div class="username">{ "@" + m.Username }</div>
+			if m.ReplyTo != nil {
+				<button
+					type="button"
+					class="reply-preview"
+					onclick={ templ.JSFuncCall("scrollToMessage", m.ReplyTo.MessageID) }
+				>
+					<span class="reply-username">{ "@" + m.ReplyTo.Username }</span>
+					<span class={ "reply-text", replyTextClass(m.ReplyTo.MessageID) }>{ replyPreviewText(m.ReplyTo) }</span>
+				</button>
+			}
 			@MessageAttachments(m)
 			if m.Text != "" {
 				<div class="message-text">{ m.Text }</div>
@@ -210,6 +263,11 @@ templ MessageInputBar(chatID int, errorMessage string) {
 		if errorMessage != "" {
 			<p class="chat-input-error">{ errorMessage }</p>
 		}
+		<div id="replyBanner" class="chat-reply-banner" hidden>
+			<span class="reply-banner-text"></span>
+			<button type="button" class="delete is-small" aria-label="Cancel reply" onclick="cancelReply()"></button>
+		</div>
+		<input type="hidden" id="replyToInput" name="reply_to_id" value=""/>
 		<div class="field has-addons is-fullwidth">
 			<div class="control">
 				<div class="file is-small">

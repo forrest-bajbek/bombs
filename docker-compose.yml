@@ -24,7 +24,7 @@ services:
             - caddy_data:/data
             - caddy_config:/config
 
-    bombs:
+    app:
         build:
             context: .
             dockerfile: Dockerfile
@@ -37,6 +37,7 @@ services:
         volumes:
             - bombs_data:/bombs/data
         environment:
+            - BOMBS_ENV=${BOMBS_ENV} # Must be PROD when running in prod. Otherwise runs in dev
             - BOMBS_ADMIN_USERNAME=${BOMBS_ADMIN_USERNAME} # optional, but must be submitted together with BOMBS_ADMIN_PASSWORD
             - BOMBS_ADMIN_PASSWORD=${BOMBS_ADMIN_PASSWORD} # optional, but must be submitted together with BOMBS_ADMIN_USERNAME
             - BOMBS_JWT_ENCRYPTION_KEY=${BOMBS_JWT_ENCRYPTION_KEY} # optional, recommended NOT to set this, will recalc every startup

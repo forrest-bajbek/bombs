@@ -76,6 +76,107 @@ templ ChatPage(chat *types.Chat) {
       white-space: nowrap;
     }
 
+    /* ── Reply banner, floats above the input bar ── */
+    .chat-reply-banner {
+      position: absolute;
+      bottom: 100%;
+      left: 0;
+      right: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      padding: 0.35rem 0.75rem;
+      background: #1A1A1A;
+      border-top: 1px solid #2A2A2A;
+      font-size: 0.8rem;
+    }
+
+    .chat-reply-banner[hidden] {
+      display: none;
+    }
+
+    .chat-reply-banner .reply-banner-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* ── Reply preview inside a bubble ── */
+    .chat-messages .reply-preview {
+      display: block;
+      width: 100%;
+      margin-bottom: 0.4rem;
+      padding: 0.25rem 0.5rem;
+      border: 0;
+      border-left: 3px solid currentColor;
+      border-radius: 0.35rem;
+      background: rgba(255, 255, 255, 0.08);
+      color: inherit;
+      font: inherit;
+      font-size: 0.8rem;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .chat-messages .reply-preview .reply-username {
+      display: block;
+      font-weight: 600;
+    }
+
+    .chat-messages .reply-preview .reply-text {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      opacity: 0.85;
+    }
+
+    .chat-messages .message {
+      -webkit-touch-callout: none;
+    }
+
+    .chat-messages .message.is-highlighted .message-body {
+      animation: message-highlight 1.5s ease-out;
+    }
+
+    @keyframes message-highlight {
+      from { box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.7); }
+      to   { box-shadow: 0 0 0 3px rgba(255, 255, 255, 0); }
+    }
+
+    /* ── Message context menu ── */
+    #messageMenu {
+      position: fixed;
+      z-index: 300;
+      min-width: 9rem;
+      padding: 0.25rem 0;
+      background: #1F1F1F;
+      border: 1px solid #333;
+      border-radius: 0.5rem;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+    }
+
+    #messageMenu[hidden] {
+      display: none;
+    }
+
+    #messageMenu button {
+      display: block;
+      width: 100%;
+      padding: 0.6rem 1rem;
+      border: 0;
+      background: none;
+      color: inherit;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    #messageMenu button:hover {
+      background: #2A2A2A;
+    }
+
     /* ── Scrollable messages area ── */
     .chat-messages {
       position: fixed;
@@ -288,6 +389,7 @@ templ ChatPage(chat *types.Chat) {
 			<div hx-ext="sse" sse-connect={ linkToSSE(chat.ID) }>
 				<div hidden sse-swap="newMessage" hx-target="#chatMessages" hx-swap="beforeend"></div>
 				<div hidden sse-swap="bomb" hx-target="#chatMessages" hx-swap="innerHTML"></div>
+				<div hidden sse-swap="messageDeleted" hx-swap="none"></div>
 				<div hidden sse-swap="typing" hx-target="#typingStatus" hx-swap="outerHTML"></div>
 			</div>
 
@@ -304,9 +406,124 @@ templ ChatPage(chat *types.Chat) {
 			// bombing the chat can't tear the open modal out of the DOM.
 			<div id="chat-modal"></div>
 
+			// Message context menu. Outside .chat-messages so a bomb can't remove it.
+			<div id="messageMenu" hidden>
+				<button type="button" data-action="reply">Reply to message</button>
+				<button type="button" data-action="delete">Delete message</button>
+			</div>
+
 			// Input Bar
 			@MessageInputBar(chat.ID, "")
 			<script>
+				// ── Message context menu: right-click or long-press a message ──
+				const LONG_PRESS_MS = 500;
+				const LONG_PRESS_MOVE_PX = 10;
+				const messageMenu = document.getElementById('messageMenu');
+				const chatMessages = document.getElementById('chatMessages');
+				let menuMessage = null;
+				let longPressTimer = null;
+				let longPressStart = null;
+
+				function hideMessageMenu() {
+					messageMenu.hidden = true;
+					menuMessage = null;
+				}
+
+				function showMessageMenu(message, x, y) {
+					menuMessage = message;
+					// Only the sender can delete.
+					messageMenu.querySelector('[data-action="delete"]').hidden = !message.hasAttribute('data-sent');
+					messageMenu.hidden = false;
+					const maxX = window.innerWidth - messageMenu.offsetWidth - 4;
+					const maxY = window.innerHeight - messageMenu.offsetHeight - 4;
+					messageMenu.style.left = Math.max(4, Math.min(x, maxX)) + 'px';
+					messageMenu.style.top = Math.max(4, Math.min(y, maxY)) + 'px';
+				}
+
+				function messageFromEvent(e) {
+					const message = e.target.closest('.message[data-message-id]');
+					return message && chatMessages.contains(message) ? message : null;
+				}
+
+				chatMessages.addEventListener('contextmenu', e => {
+					const message = messageFromEvent(e);
+					if (!message) return;
+					e.preventDefault();
+					showMessageMenu(message, e.clientX, e.clientY);
+				});
+
+				chatMessages.addEventListener('touchstart', e => {
+					const message = messageFromEvent(e);
+					if (!message || e.touches.length !== 1) return;
+					const touch = e.touches[0];
+					longPressStart = { x: touch.clientX, y: touch.clientY };
+					clearTimeout(longPressTimer);
+					longPressTimer = setTimeout(() => {
+						longPressTimer = null;
+						showMessageMenu(message, longPressStart.x, longPressStart.y);
+					}, LONG_PRESS_MS);
+				}, { passive: true });
+				chatMessages.addEventListener('touchmove', e => {
+					if (!longPressTimer) return;
+					const touch = e.touches[0];
+					if (Math.hypot(touch.clientX - longPressStart.x, touch.clientY - longPressStart.y) > LONG_PRESS_MOVE_PX) {
+						clearTimeout(longPressTimer);
+						longPressTimer = null;
+					}
+				}, { passive: true });
+				['touchend', 'touchcancel'].forEach(type => chatMessages.addEventListener(type, () => {
+					clearTimeout(longPressTimer);
+					longPressTimer = null;
+				}));
+
+				messageMenu.addEventListener('click', e => {
+					const action = e.target.closest('button')?.dataset.action;
+					if (!action || !menuMessage) return;
+					const message = menuMessage;
+					hideMessageMenu();
+					if (action === 'reply') startReply(message);
+					if (action === 'delete') htmx.ajax('POST', message.dataset.deleteUrl, { source: message, swap: 'none' });
+				});
+
+				// Dismiss on any tap elsewhere, scroll, or Escape. Capture phase so
+				// the tap that closes the menu doesn't also act on what is under it.
+				document.addEventListener('pointerdown', e => {
+					if (!messageMenu.hidden && !messageMenu.contains(e.target)) hideMessageMenu();
+				}, true);
+				document.addEventListener('keydown', e => {
+					if (e.key === 'Escape') hideMessageMenu();
+				});
+				document.querySelector('.chat-messages').addEventListener('scroll', hideMessageMenu, { passive: true });
+
+				// ── Replies ──
+				// The banner and hidden input live in the input bar, which is
+				// re-rendered after every send, so a reply resets itself.
+				function startReply(message) {
+					document.getElementById('replyToInput').value = message.dataset.messageId;
+					const username = message.querySelector('.username').textContent;
+					const text = message.querySelector('.message-text')?.textContent || '📷 Photo';
+					const banner = document.getElementById('replyBanner');
+					banner.querySelector('.reply-banner-text').textContent = 'Replying to ' + username + ': ' + text;
+					banner.hidden = false;
+					document.getElementById('messageInput').focus();
+				}
+
+				function cancelReply() {
+					document.getElementById('replyToInput').value = '';
+					document.getElementById('replyBanner').hidden = true;
+				}
+
+				function scrollToMessage(messageID) {
+					const message = document.getElementById('msg-' + messageID);
+					if (!message) return;
+					message.scrollIntoView({ block: 'center' });
+					message.classList.remove('is-highlighted');
+					// Force reflow so the animation restarts on repeated clicks.
+					void message.offsetWidth;
+					message.classList.add('is-highlighted');
+				}
+
+
 				// Shows how many photos are queued on the input bar's file picker.
 				function updateFileCount(input) {
 					input.closest('.file').querySelector('.file-count').textContent = input.files.length ? input.files.length + ' 📷' : '';
