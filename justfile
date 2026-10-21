@@ -18,3 +18,6 @@ nuke:
 
 up:
 	go tool templ generate --watch --cmd="go run ." --proxy="http://localhost:9000"
+
+test:
+    go test ./...
