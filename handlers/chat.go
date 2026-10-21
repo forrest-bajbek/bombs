@@ -422,6 +422,8 @@ func (h *Handler) MessageEvents(w http.ResponseWriter, r *http.Request) {
 			switch {
 			case event.Message != nil:
 				err = writeMessage(w, *event.Message, requestingUser.ID)
+			case event.Deleted != nil:
+				err = writeDeleted(w, *event.Deleted, requestingUser.ID)
 			case event.Typing != nil:
 				err = writeTyping(w, event.Typing, requestingUser.ID)
 			}

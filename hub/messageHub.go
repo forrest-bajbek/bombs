@@ -124,6 +124,9 @@ func (h *MessageHub) Run() {
 				h.publishTyping(message.ChatID)
 			}
 
+		case message := <-h.Deleted:
+			h.send(message.ChatID, ClientEvent{Deleted: &message})
+
 		case signal := <-h.Typing:
 			if h.markTypist(signal) {
 				h.publishTyping(signal.ChatID)
