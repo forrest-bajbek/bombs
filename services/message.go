@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/forrest-bajbek/bombs/types"
+	"github.com/forrest-bajbek/bombs/utils"
 )
 
 func (s *Service) CreateMessage(requestingUserID int, chatID int, text string, files []types.NewFile, replyToID int) (int, error) {
@@ -43,6 +44,8 @@ func (s *Service) CreateMessage(requestingUserID int, chatID int, text string, f
 			return -1, errors.New("Photo storage is full. Bomb a chat to free space.")
 		}
 	}
+
+	text = utils.SanitizeURLs(text)
 
 	return s.repo.CreateMessage(requestingUserID, chatID, text, files, replyToID)
 }
