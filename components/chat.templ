@@ -524,13 +524,6 @@ templ ChatPage(chat *types.Chat) {
 				document.addEventListener('pointerdown', e => {
 					if (!messageMenu.hidden && !messageMenu.contains(e.target)) hideMessageMenu();
 				}, true);
-				// Enter sends; Shift+Enter inserts a newline. Skipped while an IME
-				// composition is being confirmed.
-				document.addEventListener('keydown', e => {
-					if (e.target.id !== 'messageInput' || e.key !== 'Enter' || e.shiftKey || e.isComposing) return;
-					e.preventDefault();
-					e.target.form.requestSubmit();
-				});
 
 				document.addEventListener('keydown', e => {
 					if (e.key === 'Escape') hideMessageMenu();
