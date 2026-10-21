@@ -16,7 +16,7 @@ func TestSanitizeURLs(t *testing.T) {
 		{"youtu.be param removed", "https://youtu.be/abc123?is=tracking", "https://youtu.be/abc123"},
 		{"x param removed", "https://x.com/u/status/2?s=20", "https://x.com/u/status/2"},
 		{"x keeps other params", "https://x.com/u/status/2?s=20&t=z", "https://x.com/u/status/2?t=z"},
-		{"amazon params removed", "https://www.amazon.com/dp/B0?tag=aff&ref=abc&th=1", "https://www.amazon.com/dp/B0?th=1"},
+		{"amazon all params removed", "https://www.amazon.com/dp/B0?tag=aff&ref=abc&th=1", "https://www.amazon.com/dp/B0"},
 		{"subdomain matches", "https://www.x.com/u?s=20", "https://www.x.com/u"},
 		{"key match is case-insensitive", "https://x.com/u?S=20", "https://x.com/u"},
 		{"other domain untouched", "https://example.com/p?s=keep&is=keep", "https://example.com/p?s=keep&is=keep"},
@@ -39,6 +39,42 @@ func TestSanitizeURLs(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := SanitizeURLs(tt.in); got != tt.want {
 				t.Errorf("SanitizeURLs(%q) = %q, want %q", tt.in, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestRemoveQueryParams(t *testing.T) {
+	tests := []struct {
+		name   string
+		domain string
+		keys   []string
+		in     string
+		want   string
+	}{
+		{"listed key removed", "example.com", []string{"a"}, "https://example.com/p?a=1&b=2", "https://example.com/p?b=2"},
+		{"multiple keys removed", "example.com", []string{"a", "b"}, "https://example.com/p?a=1&b=2&c=3", "https://example.com/p?c=3"},
+		{"all keys removed", "example.com", []string{"a"}, "https://example.com/p?a=1", "https://example.com/p"},
+		{"unlisted keys kept", "example.com", []string{"a"}, "https://example.com/p?b=2&c=3", "https://example.com/p?b=2&c=3"},
+		{"key match is case-insensitive", "example.com", []string{"a"}, "https://example.com/p?A=1&b=2", "https://example.com/p?b=2"},
+		{"key must match exactly", "example.com", []string{"a"}, "https://example.com/p?ab=1&ba=2", "https://example.com/p?ab=1&ba=2"},
+		{"key without value removed", "example.com", []string{"a"}, "https://example.com/p?a&b=2", "https://example.com/p?b=2"},
+		{"remaining params keep order", "example.com", []string{"a"}, "https://example.com/p?z=1&a=2&m=3", "https://example.com/p?z=1&m=3"},
+		{"subdomain matches", "example.com", []string{"a"}, "https://www.example.com/p?a=1", "https://www.example.com/p"},
+		{"fragment kept", "example.com", []string{"a"}, "https://example.com/p?a=1#top", "https://example.com/p#top"},
+		{"no query unchanged", "example.com", []string{"a"}, "https://example.com/p", "https://example.com/p"},
+		{"other domain untouched", "example.com", []string{"a"}, "https://other.com/p?a=1", "https://other.com/p?a=1"},
+		{"lookalike domain untouched", "example.com", []string{"a"}, "https://notexample.com/p?a=1", "https://notexample.com/p?a=1"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			u, err := url.Parse(tt.in)
+			if err != nil {
+				t.Fatal(err)
+			}
+			removeQueryParams(tt.domain, tt.keys...)(u)
+			if got := u.String(); got != tt.want {
+				t.Errorf("got %q, want %q", got, tt.want)
 			}
 		})
 	}
