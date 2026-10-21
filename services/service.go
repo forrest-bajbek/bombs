@@ -41,9 +41,11 @@ type Repo interface {
 	DeleteChatUser(requestingUserID int, chatID int, userID int) error
 
 	// message
-	CreateMessage(requestingUserID int, chatID int, text string, files []types.NewFile) (int, error)
+	CreateMessage(requestingUserID int, chatID int, text string, files []types.NewFile, replyToID int) (int, error)
 	GetMessageByID(requestingUserID int, chatID int, messageID int) (*types.ChannelMessage, error)
 	GetMessagesByChatID(requestingUserID int, chatID int) (*[]types.ChannelMessage, error)
+	DeleteMessage(requestingUserID int, chatID int, messageID int) error
+	UpdateMessageText(requestingUserID int, chatID int, messageID int, text string) error
 	DeleteMessageByUserID(userID int) error
 
 	// file

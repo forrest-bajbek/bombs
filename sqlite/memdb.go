@@ -12,6 +12,7 @@ func EnsureMemDB(db *sql.DB) error {
 			, chat_id INTEGER NOT NULL
 			, user_id INTEGER NOT NULL
 			, encrypted_text BLOB NOT NULL
+			, reply_to_id INTEGER
 		)`,
 		`CREATE TABLE IF NOT EXISTS memdb.file (
 			id INTEGER PRIMARY KEY AUTOINCREMENT

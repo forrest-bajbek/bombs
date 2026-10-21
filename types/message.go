@@ -24,6 +24,31 @@ type ChannelMessage struct {
 	Username         string        `json:"username"`
 	Text             string        `json:"text"`
 	Files            []MessageFile `json:"files"`
+	ReplyTo          *ReplyPreview `json:"reply_to,omitempty"`
+}
+
+// ReplyPreview is the slice of a parent message shown inside a reply.
+type ReplyPreview struct {
+	MessageID int    `json:"message_id"`
+	Username  string `json:"username"`
+	Text      string `json:"text"`
+	HasFiles  bool   `json:"has_files"`
+}
+
+const replyPreviewMaxRunes = 80
+
+// NewReplyPreview builds the preview shown inside a reply to m.
+func NewReplyPreview(m *ChannelMessage) *ReplyPreview {
+	text := m.Text
+	if runes := []rune(text); len(runes) > replyPreviewMaxRunes {
+		text = string(runes[:replyPreviewMaxRunes]) + "..."
+	}
+	return &ReplyPreview{
+		MessageID: m.MessageID,
+		Username:  m.Username,
+		Text:      text,
+		HasFiles:  len(m.Files) > 0,
+	}
 }
 
 type ResponseMessage struct {
