@@ -62,6 +62,13 @@ templ ChatPage(chat *types.Chat) {
 			margin-bottom: 0;
 		}
 
+    /* One line by default; taller text scrolls inside the fixed-height bar. */
+    .chat-input-bar .textarea {
+      min-height: 2.5em;
+      max-height: 3.5rem;
+      resize: none;
+    }
+
     .chat-input-error {
       color: #FF6B6B;
       font-size: 0.75rem;
@@ -495,6 +502,14 @@ templ ChatPage(chat *types.Chat) {
 				document.addEventListener('pointerdown', e => {
 					if (!messageMenu.hidden && !messageMenu.contains(e.target)) hideMessageMenu();
 				}, true);
+				// Enter sends; Shift+Enter inserts a newline. Skipped while an IME
+				// composition is being confirmed.
+				document.addEventListener('keydown', e => {
+					if (e.target.id !== 'messageInput' || e.key !== 'Enter' || e.shiftKey || e.isComposing) return;
+					e.preventDefault();
+					e.target.form.requestSubmit();
+				});
+
 				document.addEventListener('keydown', e => {
 					if (e.key === 'Escape') hideMessageMenu();
 				});

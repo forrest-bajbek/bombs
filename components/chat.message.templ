@@ -294,16 +294,16 @@ templ MessageInputBar(chatID int, errorMessage string) {
 				</div>
 			</div>
 			<div class="control is-expanded">
-				<input
-					class="input"
+				<textarea
+					class="textarea"
 					id="messageInput"
 					name="text"
-					type="text"
+					rows="1"
 					placeholder="Type a message…"
 					autocomplete="off"
 					maxlength="1024"
 					data-typing-url={ typingURL(chatID) }
-				/>
+				></textarea>
 			</div>
 			<div class="control">
 				<button class="button is-primary" type="submit">Send</button>
