@@ -268,6 +268,7 @@ templ MessageInputBar(chatID int, errorMessage string) {
 		hx-post={ messageSendURL(chatID) }
 		data-create-url={ messageSendURL(chatID) }
 		hx-encoding="multipart/form-data"
+		hx-trigger="submit, keydown[key=='Enter'&&shiftKey&&!isComposing] from:find #messageInput"
 		hx-target="this"
 		hx-swap="outerHTML"
 		hx-disabled-elt="find button[type='submit']"

@@ -940,7 +940,7 @@ func MessageInputBar(chatID int, errorMessage string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "\" hx-encoding=\"multipart/form-data\" hx-target=\"this\" hx-swap=\"outerHTML\" hx-disabled-elt=\"find button[type='submit']\" onpaste=\"attachPastedImages(this, event)\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "\" hx-encoding=\"multipart/form-data\" hx-trigger=\"submit, keydown[key=='Enter'&&shiftKey&&!isComposing] from:find #messageInput\" hx-target=\"this\" hx-swap=\"outerHTML\" hx-disabled-elt=\"find button[type='submit']\" onpaste=\"attachPastedImages(this, event)\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -952,7 +952,7 @@ func MessageInputBar(chatID int, errorMessage string) templ.Component {
 			var templ_7745c5c3_Var46 string
 			templ_7745c5c3_Var46, templ_7745c5c3_Err = templ.JoinStringErrs(errorMessage)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/chat.message.templ`, Line: 277, Col: 45}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/chat.message.templ`, Line: 278, Col: 45}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var46))
 			if templ_7745c5c3_Err != nil {
@@ -970,7 +970,7 @@ func MessageInputBar(chatID int, errorMessage string) templ.Component {
 		var templ_7745c5c3_Var47 string
 		templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.ResolveAttributeValue(typingURL(chatID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/chat.message.templ`, Line: 312, Col: 40}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/chat.message.templ`, Line: 313, Col: 40}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var47)
 		if templ_7745c5c3_Err != nil {
