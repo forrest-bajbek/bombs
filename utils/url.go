@@ -12,6 +12,11 @@ func IsHTTPS(r *http.Request) bool {
 	return false
 }
 
+// SanitizeURLs cleans URLs in message text. Placeholder: returns text unchanged.
+func SanitizeURLs(text string) string {
+	return text
+}
+
 func GetBaseURL(r *http.Request) string {
 
 	domain := r.Host
