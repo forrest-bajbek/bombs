@@ -6,7 +6,14 @@ import (
 
 	"github.com/forrest-bajbek/bombs/routes"
 	"github.com/forrest-bajbek/bombs/types"
+	"github.com/forrest-bajbek/bombs/utils"
 )
+
+// messageHTML renders message text as markdown. The renderer escapes raw
+// HTML, so the output is safe to emit unescaped.
+func messageHTML(text string) templ.Component {
+	return templ.Raw(utils.RenderMarkdown(text))
+}
 
 // messageFilesURL opens the lightbox at the given 0-based photo index.
 func messageFilesURL(chatID int, messageID int, index int) string {
@@ -182,7 +189,7 @@ templ messageBubble(m *types.ResponseMessage, oob bool) {
 			}
 			@MessageAttachments(m)
 			if m.Text != "" {
-				<div class="message-text">{ m.Text }</div>
+				<div class="message-text" data-raw={ m.Text }>@messageHTML(m.Text)</div>
 			}
 			<time class="timestamp" datetime={ messageTimestampFull(m) }>{ messageTimestamp(m) }</time>
 		</div>

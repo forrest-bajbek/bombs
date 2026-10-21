@@ -259,8 +259,30 @@ templ ChatPage(chat *types.Chat) {
     }
 
     .chat-messages .message .message-body .message-text {
-      white-space: pre-wrap;
       overflow-wrap: anywhere;
+    }
+
+    .chat-messages .message .message-body .message-text p {
+      margin: 0;
+    }
+
+    .chat-messages .message .message-body .message-text p + p {
+      margin-top: 0.5rem;
+    }
+
+    .chat-messages .message .message-body .message-text ul,
+    .chat-messages .message .message-body .message-text ol {
+      margin: 0.25rem 0 0.25rem 1.25rem;
+    }
+
+    .chat-messages .message .message-body .message-text pre {
+      overflow-x: auto;
+      padding: 0.5rem;
+    }
+
+    .chat-messages .message .message-body .message-text a {
+      color: inherit;
+      text-decoration: underline;
     }
 
     /* ── Photo attachments ── */
@@ -438,7 +460,7 @@ templ ChatPage(chat *types.Chat) {
 					menuMessage = message;
 					// Only the sender can delete.
 					const sent = message.hasAttribute('data-sent');
-					const text = message.querySelector('.message-text')?.textContent;
+					const text = message.querySelector('.message-text')?.dataset.raw;
 					const hasFiles = !!message.querySelector('.attachments');
 					// Only the sender can edit or delete. A deleted message
 					// (text "(deleted)", no photos) can't be edited.
@@ -522,7 +544,7 @@ templ ChatPage(chat *types.Chat) {
 					cancelComposerMode();
 					document.getElementById('replyToInput').value = message.dataset.messageId;
 					const username = message.querySelector('.username').textContent;
-					const text = message.querySelector('.message-text')?.textContent || '📷 Photo';
+					const text = message.querySelector('.message-text')?.dataset.raw || '📷 Photo';
 					const banner = document.getElementById('replyBanner');
 					banner.querySelector('.reply-banner-text').textContent = 'Replying to ' + username + ': ' + text;
 					banner.hidden = false;
@@ -543,7 +565,7 @@ templ ChatPage(chat *types.Chat) {
 					updateFileCount(files);
 					files.disabled = true;
 					const input = document.getElementById('messageInput');
-					input.value = message.querySelector('.message-text')?.textContent || '';
+					input.value = message.querySelector('.message-text')?.dataset.raw || '';
 					const banner = document.getElementById('replyBanner');
 					banner.querySelector('.reply-banner-text').textContent = 'Editing message';
 					banner.hidden = false;

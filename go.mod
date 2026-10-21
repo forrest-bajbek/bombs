@@ -10,6 +10,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/ncruces/go-sqlite3 v0.33.3
 	github.com/pressly/goose/v3 v3.27.0
+	github.com/yuin/goldmark v1.7.16
 	golang.org/x/crypto v0.50.0
 	golang.org/x/image v0.46.0
 )
