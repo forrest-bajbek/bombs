@@ -393,7 +393,7 @@ templ ChatPage(chat *types.Chat) {
 			<div hx-ext="sse" sse-connect={ linkToSSE(chat.ID) }>
 				<div hidden sse-swap="newMessage" hx-target="#chatMessages" hx-swap="beforeend"></div>
 				<div hidden sse-swap="bomb" hx-target="#chatMessages" hx-swap="innerHTML"></div>
-				<div hidden sse-swap="messageDeleted" hx-swap="none"></div>
+				<div hidden sse-swap="messageUpdated" hx-swap="none"></div>
 				<div hidden sse-swap="typing" hx-target="#typingStatus" hx-swap="outerHTML"></div>
 			</div>
 
@@ -413,6 +413,7 @@ templ ChatPage(chat *types.Chat) {
 			// Message context menu. Outside .chat-messages so a bomb can't remove it.
 			<div id="messageMenu" hidden>
 				<button type="button" data-action="reply">Reply to message</button>
+				<button type="button" data-action="edit">Edit message</button>
 				<button type="button" data-action="delete">Delete message</button>
 			</div>
 
@@ -436,7 +437,13 @@ templ ChatPage(chat *types.Chat) {
 				function showMessageMenu(message, x, y) {
 					menuMessage = message;
 					// Only the sender can delete.
-					messageMenu.querySelector('[data-action="delete"]').hidden = !message.hasAttribute('data-sent');
+					const sent = message.hasAttribute('data-sent');
+					const text = message.querySelector('.message-text')?.textContent;
+					const hasFiles = !!message.querySelector('.attachments');
+					// Only the sender can edit or delete. A deleted message
+					// (text "(deleted)", no photos) can't be edited.
+					messageMenu.querySelector('[data-action="delete"]').hidden = !sent;
+					messageMenu.querySelector('[data-action="edit"]').hidden = !sent || (text === '(deleted)' && !hasFiles);
 					messageMenu.hidden = false;
 					const maxX = window.innerWidth - messageMenu.offsetWidth - 4;
 					const maxY = window.innerHeight - messageMenu.offsetHeight - 4;
@@ -486,6 +493,7 @@ templ ChatPage(chat *types.Chat) {
 					const message = menuMessage;
 					hideMessageMenu();
 					if (action === 'reply') startReply(message);
+					if (action === 'edit') startEdit(message);
 					if (action === 'delete') htmx.ajax('POST', message.dataset.deleteUrl, { source: message, swap: 'none' });
 				});
 
@@ -503,6 +511,7 @@ templ ChatPage(chat *types.Chat) {
 				// The banner and hidden input live in the input bar, which is
 				// re-rendered after every send, so a reply resets itself.
 				function startReply(message) {
+					cancelComposerMode();
 					document.getElementById('replyToInput').value = message.dataset.messageId;
 					const username = message.querySelector('.username').textContent;
 					const text = message.querySelector('.message-text')?.textContent || '📷 Photo';
@@ -512,7 +521,37 @@ templ ChatPage(chat *types.Chat) {
 					document.getElementById('messageInput').focus();
 				}
 
-				function cancelReply() {
+				// Edit reuses the input bar: the form posts to the message's edit
+				// URL, the text box is prefilled, and the file picker is disabled
+				// because edits never touch photos. A save re-renders the bar,
+				// which restores everything.
+				function startEdit(message) {
+					cancelComposerMode();
+					const form = document.querySelector('.chat-input-bar');
+					form.setAttribute('hx-post', message.dataset.editUrl);
+					htmx.process(form);
+					const files = form.querySelector('input[name="files"]');
+					files.value = '';
+					updateFileCount(files);
+					files.disabled = true;
+					const input = document.getElementById('messageInput');
+					input.value = message.querySelector('.message-text')?.textContent || '';
+					const banner = document.getElementById('replyBanner');
+					banner.querySelector('.reply-banner-text').textContent = 'Editing message';
+					banner.hidden = false;
+					input.focus();
+				}
+
+				// Leaves reply or edit mode, restoring the form to a plain send.
+				function cancelComposerMode() {
+					const form = document.querySelector('.chat-input-bar');
+					const wasEditing = form.getAttribute('hx-post') !== form.dataset.createUrl;
+					if (wasEditing) {
+						form.setAttribute('hx-post', form.dataset.createUrl);
+						htmx.process(form);
+						document.getElementById('messageInput').value = '';
+					}
+					form.querySelector('input[name="files"]').disabled = false;
 					document.getElementById('replyToInput').value = '';
 					document.getElementById('replyBanner').hidden = true;
 				}

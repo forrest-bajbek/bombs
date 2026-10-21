@@ -40,6 +40,7 @@ const (
 	ChatMessageCreate = "chat.message.create"
 	ChatMessageEvents = "chat.message.events"
 	ChatMessageDelete = "chat.message.delete"
+	ChatMessageEdit   = "chat.message.edit"
 
 	// ChatFile serves attachment bytes. It's a real resource rather than
 	// an HTML fragment, so it takes no "partial." prefix.
@@ -103,6 +104,7 @@ func Register() {
 	reverse.Add(ChatMessageCreate, "/chat/"+chatIDParam+"/message/create", chatIDParam)
 	reverse.Add(ChatMessageEvents, "/chat/"+chatIDParam+"/message/events", chatIDParam)
 	reverse.Add(ChatMessageDelete, "/chat/"+chatIDParam+"/message/"+messageIDParam+"/delete", chatIDParam, messageIDParam)
+	reverse.Add(ChatMessageEdit, "/chat/"+chatIDParam+"/message/"+messageIDParam+"/edit", chatIDParam, messageIDParam)
 
 	// chat_id is in the path so that authorizing a download is a single
 	// join against chat_user, with no lookup to discover which chat the

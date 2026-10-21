@@ -41,6 +41,10 @@ func messageDeleteURL(chatID int, messageID int) string {
 	return routes.URL(routes.ChatMessageDelete, strconv.Itoa(chatID), strconv.Itoa(messageID))
 }
 
+func messageEditURL(chatID int, messageID int) string {
+	return routes.URL(routes.ChatMessageEdit, strconv.Itoa(chatID), strconv.Itoa(messageID))
+}
+
 // replyPreviewText falls back to a label for photo-only parents.
 func replyPreviewText(p *types.ReplyPreview) string {
 	if p.Text == "" && p.HasFiles {
@@ -142,12 +146,12 @@ templ ChatMessageBubble(m *types.ResponseMessage) {
 	@messageBubble(m, false)
 }
 
-// DeletedMessage is sent over SSE when a message is deleted. Both parts are
+// UpdatedMessage is sent over SSE when a message is deleted or edited. Both parts are
 // out-of-band swaps: the bubble replaces itself by id, and every reply
 // preview pointing at the message gets the new text.
-templ DeletedMessage(m *types.ResponseMessage) {
+templ UpdatedMessage(m *types.ResponseMessage) {
 	@messageBubble(m, true)
-	<span hx-swap-oob={ "innerHTML:." + replyTextClass(m.MessageID) }>{ m.Text }</span>
+	<span hx-swap-oob={ "innerHTML:." + replyTextClass(m.MessageID) }>{ replyPreviewText(types.NewReplyPreview(&m.ChannelMessage)) }</span>
 }
 
 templ messageBubble(m *types.ResponseMessage, oob bool) {
@@ -156,6 +160,7 @@ templ messageBubble(m *types.ResponseMessage, oob bool) {
 			id={ messageDOMID(m.MessageID) }
 			data-message-id={ strconv.Itoa(m.MessageID) }
 			data-delete-url={ messageDeleteURL(m.ChatID, m.MessageID) }
+			data-edit-url={ messageEditURL(m.ChatID, m.MessageID) }
 		}
 		if oob {
 			hx-swap-oob="outerHTML"
@@ -254,6 +259,7 @@ templ MessageInputBar(chatID int, errorMessage string) {
 	<form
 		class="chat-input-bar"
 		hx-post={ messageSendURL(chatID) }
+		data-create-url={ messageSendURL(chatID) }
 		hx-encoding="multipart/form-data"
 		hx-target="this"
 		hx-swap="outerHTML"
@@ -265,7 +271,7 @@ templ MessageInputBar(chatID int, errorMessage string) {
 		}
 		<div id="replyBanner" class="chat-reply-banner" hidden>
 			<span class="reply-banner-text"></span>
-			<button type="button" class="delete is-small" aria-label="Cancel reply" onclick="cancelReply()"></button>
+			<button type="button" class="delete is-small" aria-label="Cancel" onclick="cancelComposerMode()"></button>
 		</div>
 		<input type="hidden" id="replyToInput" name="reply_to_id" value=""/>
 		<div class="field has-addons is-fullwidth">

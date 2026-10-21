@@ -327,3 +327,30 @@ func (r *Repo) DeleteMessage(requestingUserID int, chatID int, messageID int) er
 
 	return tx.Commit()
 }
+
+// UpdateMessageText replaces the text of one of the requester's own messages.
+func (r *Repo) UpdateMessageText(requestingUserID int, chatID int, messageID int, text string) error {
+	user_in_chat, err := r.IsUserInChat(requestingUserID, chatID)
+	if err != nil {
+		return err
+	}
+	if !user_in_chat {
+		return errors.New("You can only edit messages in chats of which you are a member.")
+	}
+	encryptedText, err := r.encrypter.Encrypt(text)
+	if err != nil {
+		return err
+	}
+
+	stmt := "UPDATE memdb.message SET encrypted_text = ? WHERE id = ? AND chat_id = ? AND user_id = ?"
+	result, err := r.db.Exec(stmt, encryptedText, messageID, chatID, requestingUserID)
+	if err != nil {
+		return err
+	}
+	if n, err := result.RowsAffected(); err != nil {
+		return err
+	} else if n == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
+}

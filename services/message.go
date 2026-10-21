@@ -1,6 +1,7 @@
 package services
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"strings"
@@ -56,6 +57,26 @@ func (s *Service) GetMessagesByChatID(requestingUserID int, chatID int) (*[]type
 
 func (s *Service) DeleteMessageByUserID(userID int) error {
 	return s.repo.DeleteMessageByUserID(userID)
+}
+
+// UpdateMessageText edits the text of a message. Photos are never touched.
+func (s *Service) UpdateMessageText(requestingUserID int, chatID int, messageID int, text string) error {
+	if len(text) > 1024 {
+		return errors.New("Message must be less than 1024 characters.")
+	}
+	m, err := s.repo.GetMessageByID(requestingUserID, chatID, messageID)
+	if err != nil {
+		return err
+	}
+	if strings.TrimSpace(text) == "" && len(m.Files) == 0 {
+		return errors.New("Message must contain text or at least one photo.")
+	}
+	// Deleted messages carry no marker, so the placeholder text is the only
+	// signal that one must stay deleted.
+	if m.Text == "(deleted)" && len(m.Files) == 0 {
+		return sql.ErrNoRows
+	}
+	return s.repo.UpdateMessageText(requestingUserID, chatID, messageID, text)
 }
 
 func (s *Service) DeleteMessage(requestingUserID int, chatID int, messageID int) error {

@@ -41,7 +41,7 @@ type TypingStatus struct {
 // field is set.
 type ClientEvent struct {
 	Message *types.ChannelMessage
-	Deleted *types.ChannelMessage
+	Updated *types.ChannelMessage
 	Typing  *TypingStatus
 }
 
@@ -52,7 +52,7 @@ type typistEntry struct {
 
 type MessageHub struct {
 	Broadcast        chan types.ChannelMessage
-	Deleted          chan types.ChannelMessage
+	Updated          chan types.ChannelMessage
 	Typing           chan TypingSignal
 	UnregisterClient chan string
 	ClientChannels   map[string]chan ClientEvent
@@ -71,7 +71,7 @@ type MessageHub struct {
 func NewMessageHub() *MessageHub {
 	return &MessageHub{
 		Broadcast:        make(chan types.ChannelMessage),
-		Deleted:          make(chan types.ChannelMessage),
+		Updated:          make(chan types.ChannelMessage),
 		Typing:           make(chan TypingSignal),
 		UnregisterClient: make(chan string),
 		ClientChannels:   make(map[string]chan ClientEvent),
@@ -124,8 +124,8 @@ func (h *MessageHub) Run() {
 				h.publishTyping(message.ChatID)
 			}
 
-		case message := <-h.Deleted:
-			h.send(message.ChatID, ClientEvent{Deleted: &message})
+		case message := <-h.Updated:
+			h.send(message.ChatID, ClientEvent{Updated: &message})
 
 		case signal := <-h.Typing:
 			if h.markTypist(signal) {
