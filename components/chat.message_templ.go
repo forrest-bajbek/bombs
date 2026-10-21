@@ -963,14 +963,14 @@ func MessageInputBar(chatID int, errorMessage string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "<div id=\"replyBanner\" class=\"chat-reply-banner\" hidden><span class=\"reply-banner-text\"></span> <button type=\"button\" class=\"delete is-small\" aria-label=\"Cancel\" onclick=\"cancelComposerMode()\"></button></div><input type=\"hidden\" id=\"replyToInput\" name=\"reply_to_id\" value=\"\"><div class=\"field has-addons is-fullwidth\"><div class=\"control\"><div class=\"file is-small\"><label class=\"file-label\"><input class=\"file-input\" type=\"file\" name=\"files\" multiple accept=\"image/jpeg,image/png,image/gif,image/webp\" onchange=\"updateFileCount(this)\"> <span class=\"file-cta\"><span class=\"file-label\">📎</span></span> <span class=\"file-count\"></span></label></div></div><div class=\"control is-expanded\"><textarea class=\"textarea\" id=\"messageInput\" name=\"text\" rows=\"1\" placeholder=\"Type a message…\" autocomplete=\"off\" maxlength=\"1024\" data-typing-url=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "<div id=\"replyBanner\" class=\"chat-reply-banner\" hidden><span class=\"reply-banner-text\"></span> <button type=\"button\" class=\"delete is-small\" aria-label=\"Cancel\" onclick=\"cancelComposerMode()\"></button></div><input type=\"hidden\" id=\"replyToInput\" name=\"reply_to_id\" value=\"\"><div class=\"field has-addons is-fullwidth\"><div class=\"control\"><div class=\"file is-small\"><label class=\"file-label\"><input class=\"file-input\" type=\"file\" name=\"files\" multiple accept=\"image/jpeg,image/png,image/gif,image/webp\" onchange=\"updateFileCount(this)\"> <span class=\"file-cta\"><span class=\"file-label\">📎</span></span> <span class=\"file-count\"></span></label></div></div><div class=\"control is-expanded\"><textarea class=\"textarea\" id=\"messageInput\" name=\"text\" rows=\"1\" placeholder=\"Type a message…\" autocomplete=\"off\" autocapitalize=\"off\" maxlength=\"1024\" data-typing-url=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var47 string
 		templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.ResolveAttributeValue(typingURL(chatID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/chat.message.templ`, Line: 313, Col: 40}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/chat.message.templ`, Line: 314, Col: 40}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var47)
 		if templ_7745c5c3_Err != nil {

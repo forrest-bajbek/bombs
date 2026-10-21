@@ -309,6 +309,7 @@ templ MessageInputBar(chatID int, errorMessage string) {
 					rows="1"
 					placeholder="Type a message…"
 					autocomplete="off"
+					autocapitalize="off"
 					maxlength="1024"
 					data-typing-url={ typingURL(chatID) }
 				></textarea>
