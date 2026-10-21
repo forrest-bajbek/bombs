@@ -17,7 +17,7 @@ func messageSendURL(chatID int) string {
 
 templ ChatPage(chat *types.Chat) {
 	@BasePage(chat.Name) {
-  <style>
+		<style>
     /* ── Heights (change these to resize nav / input bar) ── */
     :root {
       --nav-height:  3.25rem;
@@ -378,48 +378,41 @@ templ ChatPage(chat *types.Chat) {
       outline-offset: -4px;
     }
   </style>
-
-			// Nav
-			<nav class="navbar chat-navbar">
-				<div class="navbar-brand">
-					<a class="navbar-item button" href={ routes.URL(routes.Home) }>Back</a>
-					<a class="navbar-item" href={ chat.ChatProfileLink() }>{ chat.Name }</a>
-				</div>
-			</nav>
-
-			// Live message stream. The receivers sit outside .chat-messages on
-			// purpose: the bomb event swaps innerHTML on the container, so a
-			// receiver nested inside would delete itself and stop listening.
-			<div hx-ext="sse" sse-connect={ linkToSSE(chat.ID) }>
-				<div hidden sse-swap="newMessage" hx-target="#chatMessages" hx-swap="beforeend"></div>
-				<div hidden sse-swap="bomb" hx-target="#chatMessages" hx-swap="innerHTML"></div>
-				<div hidden sse-swap="messageUpdated" hx-swap="none"></div>
-				<div hidden sse-swap="typing" hx-target="#typingStatus" hx-swap="outerHTML"></div>
+		// Nav
+		<nav class="navbar chat-navbar">
+			<div class="navbar-brand">
+				<a class="navbar-item button" href={ routes.URL(routes.Home) }>Back</a>
+				<a class="navbar-item" href={ chat.ChatProfileLink() }>{ chat.Name }</a>
 			</div>
-
-			// Messages
-			<div class="chat-messages" hx-on::after-swap="this.scrollTop = this.scrollHeight">
-				<div class="chat-messages-inner" id="chatMessages"></div>
-			</div>
-
-			// Who else is typing. Outside .chat-messages for the same reason as
-			// the receivers above: a bomb would otherwise delete it.
-			@TypingStatus(nil)
-
-			// Attachment modal target. A sibling of .chat-messages so that
-			// bombing the chat can't tear the open modal out of the DOM.
-			<div id="chat-modal"></div>
-
-			// Message context menu. Outside .chat-messages so a bomb can't remove it.
-			<div id="messageMenu" hidden>
-				<button type="button" data-action="reply">Reply to message</button>
-				<button type="button" data-action="edit">Edit message</button>
-				<button type="button" data-action="delete">Delete message</button>
-			</div>
-
-			// Input Bar
-			@MessageInputBar(chat.ID, "")
-			<script>
+		</nav>
+		// Live message stream. The receivers sit outside .chat-messages on
+		// purpose: the bomb event swaps innerHTML on the container, so a
+		// receiver nested inside would delete itself and stop listening.
+		<div hx-ext="sse" sse-connect={ linkToSSE(chat.ID) }>
+			<div hidden sse-swap="newMessage" hx-target="#chatMessages" hx-swap="beforeend"></div>
+			<div hidden sse-swap="bomb" hx-target="#chatMessages" hx-swap="innerHTML"></div>
+			<div hidden sse-swap="messageUpdated" hx-swap="none"></div>
+			<div hidden sse-swap="typing" hx-target="#typingStatus" hx-swap="outerHTML"></div>
+		</div>
+		// Messages
+		<div class="chat-messages" hx-on::after-swap="this.scrollTop = this.scrollHeight">
+			<div class="chat-messages-inner" id="chatMessages"></div>
+		</div>
+		// Who else is typing. Outside .chat-messages for the same reason as
+		// the receivers above: a bomb would otherwise delete it.
+		@TypingStatus(nil)
+		// Attachment modal target. A sibling of .chat-messages so that
+		// bombing the chat can't tear the open modal out of the DOM.
+		<div id="chat-modal"></div>
+		// Message context menu. Outside .chat-messages so a bomb can't remove it.
+		<div id="messageMenu" hidden>
+			<button type="button" data-action="reply">Reply</button>
+			<button type="button" data-action="edit">Edit</button>
+			<button type="button" data-action="delete">Delete</button>
+		</div>
+		// Input Bar
+		@MessageInputBar(chat.ID, "")
+		<script>
 				// ── Message context menu: right-click or long-press a message ──
 				const LONG_PRESS_MS = 500;
 				const LONG_PRESS_MOVE_PX = 10;
