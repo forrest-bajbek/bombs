@@ -16,6 +16,20 @@ func IsHTTPS(r *http.Request) bool {
 	return false
 }
 
+func GetBaseURL(r *http.Request) string {
+
+	domain := r.Host
+
+	var protocol string
+	if IsHTTPS(r) {
+		protocol = "https"
+	} else {
+		protocol = "http"
+	}
+
+	return fmt.Sprintf("%s://%s", protocol, domain)
+}
+
 // urlPattern matches http(s) URLs.
 // The last character cannot be common trailing punctuation, so "see https://a.com/x." keeps the period outside the match.
 var urlPattern = regexp.MustCompile(`(?i)https?://[^\s<>"']*[^\s<>"'.,;:!?)\]}]`)
@@ -78,18 +92,4 @@ func removeAllQueryParams(domain string) func(*url.URL) {
 		u.RawQuery = ""
 		u.ForceQuery = false
 	}
-}
-
-func GetBaseURL(r *http.Request) string {
-
-	domain := r.Host
-
-	var protocol string
-	if IsHTTPS(r) {
-		protocol = "https"
-	} else {
-		protocol = "http"
-	}
-
-	return fmt.Sprintf("%s://%s", protocol, domain)
 }
