@@ -1,6 +1,6 @@
 # Bombs, a chat app
 
-The prevailing security model for modern chat applications (Simplex, Signal, Telegram, Matrix) is "just encrypt bro". While encryption is important, it makes an implicit assertion: "messages should be recoverable for as long as possible". This is a strange requirement for something as nonchalant as text messages.
+The prevailing security model for modern chat applications (Simplex, Signal, Telegram, Matrix) is "just encrypt". While encryption is important, it makes an implicit assertion: "messages should be recoverable for as long as possible". This is a strange requirement for text messages, which are not meant to be a lasting, searchable ledger of communication.
 
 Most applications:
 
@@ -9,8 +9,6 @@ Most applications:
 1. send push notifications, which send your messages unencrypted through centralized APIs owned by Apple and Google.
 1. store your messages on hard drives that are often backed up
 1. delete your messages in such a way that forensic analysts can easily recover
-
-Despite cultural expectations, _you are not legally obligated to save every text message you've ever sent over your entire life_, and _using software that doesn't retain message history isn't illegal_.
 
 Bombs works differently than most apps.
 
@@ -27,8 +25,6 @@ Plus:
 - Deleting an individual message automatically deletes all attachments for that message.
 
 In other words, Bombs makes deleting messages easy, and it actually deletes things.
-
-If the last few years of politics has taught us anything, it's that people are rarely in court for things they texted over the last 3 days. If a judge orders you to hand over your Bombs server, eagerly give them the whole computer. If the prosecution wants to recover the immediately preceding 72 hours of message history from unpowered volatile memory, let them. You weren't retroactively required to store everything you ever said online just in case some prosecutor wanted a great case against you.
 
 ## Architecture
 
